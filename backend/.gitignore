@@ -1,0 +1,17 @@
+alembic.ini
+alembic/
+
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+env
+.env
+.env.*
+*.pem
+*.key
+
+node_modules/
+dist/
+EOF
