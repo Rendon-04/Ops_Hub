@@ -37,7 +37,6 @@ It’s designed as a clean, production-style MVP that mirrors how internal ops t
 * React
 * Vite
 * TypeScript
-* Cypress (E2E smoke tests)
 
 ---
 
