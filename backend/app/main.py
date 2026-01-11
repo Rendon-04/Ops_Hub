@@ -16,8 +16,6 @@ from app.api.routers import (
     dashboard_routes,
 )
 
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
 
 app.include_router(auth_routes.router)
@@ -26,9 +24,12 @@ app.include_router(inventory_routes.router)
 app.include_router(maintenance_routes.router)
 app.include_router(dashboard_routes.router)
 
+@app.on_event("startup")
+def on_startup():
+    Base.metadata.create_all(bind=engine)
+
 @app.get("/")
 def health_check():
     return {"status": "ok"}
-
 
 

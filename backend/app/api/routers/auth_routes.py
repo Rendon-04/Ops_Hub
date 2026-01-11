@@ -23,10 +23,6 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    print("DEBUG password length bytes:", len(payload.password.encode("utf-8")))
-    print("DEBUG signup password type:", type(payload.password))
-    print("DEBUG signup password length bytes:", len(payload.password.encode("utf-8")))
-    print("DEBUG signup password preview:", repr(payload.password[:20]))
 
     return {"message": "Signup successful"}
 
