@@ -4,7 +4,7 @@ OpsHub is a **full-stack operations management app** for tracking vendors, inven
 
 ## 🎥 Demo
 
-**1-minute walkthrough of OpsHub**
+**Quick walkthrough of OpsHub**
 
 [![OpsHub Demo](./demo/opshub-thumbnail.png)](https://github.com/user-attachments/assets/f53e8ca1-9da5-4822-a50f-97574af90eef)
 
