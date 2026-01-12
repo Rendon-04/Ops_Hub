@@ -218,7 +218,7 @@ Open that URL in your browser
    * A maintenance task
 5. Confirm dashboard counts update
 
-If that works — you’re fully set up.
+If that works, you’re fully set up.
 
 ---
 
