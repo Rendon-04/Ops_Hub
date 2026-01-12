@@ -68,7 +68,6 @@ OpsHub/
 │   │   ├── pages/
 │   │   ├── api/
 │   │   └── main.tsx
-│   ├── cypress/
 │   ├── package.json
 │   └── .env.example
 │
