@@ -6,11 +6,10 @@ OpsHub is a **full-stack operations management app** for tracking vendors, inven
 
 **1-minute walkthrough of OpsHub**
 
-[![OpsHub Demo](demo/opshub-thumbnail.png)](
-https://github.com/Rendon-04/Ops_Hub/blob/main/demo/opshub-demo.mp4
-)
+[![OpsHub Demo](./demo/opshub-thumbnail.png)](https://github.com/user-attachments/assets/f53e8ca1-9da5-4822-a50f-97574af90eef)
 
-It’s designed as a clean, production-style MVP that mirrors how internal ops tools are built at real companies.
+
+It’s designed as a clean, production-style dashboard that streamlines ops tools.
 
 * **Backend:** FastAPI + SQLAlchemy + JWT authentication
 * **Frontend:** React + Vite
