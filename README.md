@@ -1,6 +1,13 @@
 # OpsHub
 
 OpsHub is a **full-stack operations management app** for tracking vendors, inventory, and maintenance tasks in one place.
+## 🎥 Demo
+
+**Walkthrough of OpsHub**
+  
+Click to watch the demo video  
+https://github.com/Rendon-04/Ops_Hub/blob/main/demo/opshub-demo.mov
+
 
 It’s designed as a clean, production-style MVP that mirrors how internal ops tools are built at real companies.
 
