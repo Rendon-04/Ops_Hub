@@ -150,9 +150,11 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
         "/inventory/",
         json={
             "name": "Printer Paper",
-            "sku": "PP-001",
+            "category": "Office and tech items",
             "quantity": 5,
             "reorder_threshold": 10,
+            "reorder_url": "https://example.com/reorder/paper",
+            "notes": "Restock monthly",
             "vendor_id": vendor_a_id,
         },
         headers=auth_headers(token_a),
@@ -161,6 +163,10 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
     item = r.json()
     item_id = item["id"]
     assert item["is_low_stock"] is True
+    assert item["status"] == "Low"
+    assert item["category"] == "Office and tech items"
+    assert item["reorder_url"] == "https://example.com/reorder/paper"
+    assert item["notes"] == "Restock monthly"
     assert item["vendor_id"] == vendor_a_id
 
     # list inventory
@@ -181,6 +187,7 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
     )
     assert r.status_code == 200
     assert r.json()["is_low_stock"] is False
+    assert r.json()["status"] == "In Stock"
 
     # low-stock endpoint should now be empty
     r = client.get("/inventory/low-stock", headers=auth_headers(token_a))
@@ -194,11 +201,21 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
         headers=auth_headers(token_a),
     )
     assert r.status_code == 200
+    assert r.json()["status"] == "Low"
 
     r = client.get("/inventory/low-stock", headers=auth_headers(token_a))
     assert r.status_code == 200
     assert len(r.json()) == 1
     assert r.json()[0]["name"] == "Gloves"
+
+    # create out-of-stock item
+    r = client.post(
+        "/inventory/",
+        json={"name": "Coffee Pods", "quantity": 0, "reorder_threshold": 10},
+        headers=auth_headers(token_a),
+    )
+    assert r.status_code == 200
+    assert r.json()["status"] == "Out"
 
     # ownership check: user B cannot see A's item
     signup(client, "b@test.com", "password123")
@@ -215,6 +232,15 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
     )
     assert r.status_code == 400
     assert "vendor_id" in r.json()["detail"]
+
+    # weekly inventory check
+    r = client.post(f"/inventory/{item_id}/check", headers=auth_headers(token_a))
+    assert r.status_code == 200
+    assert r.json()["last_checked_at"] is not None
+
+    r = client.post("/inventory/check", headers=auth_headers(token_a))
+    assert r.status_code == 200
+    assert r.json()["checked_count"] >= 1
 
 
 def test_maintenance_crud_upcoming_and_ownership(client: TestClient):
@@ -235,19 +261,32 @@ def test_maintenance_crud_upcoming_and_ownership(client: TestClient):
     due_3 = date.today() + timedelta(days=3)
     r = client.post(
         "/maintenance/",
-        json={"inventory_item_id": item_a_id, "title": "Replace filter", "due_date": str(due_3)},
+        json={
+            "inventory_item_id": item_a_id,
+            "title": "Replace filter",
+            "due_date": str(due_3),
+            "is_high_priority": True,
+            "notes": "Urgent",
+            "status": "OPEN",
+        },
         headers=auth_headers(token_a),
     )
     assert r.status_code == 200, r.text
     task = r.json()
     task_id = task["id"]
-    assert task["status"] == "PENDING"
+    assert task["status"] == "OPEN"
+    assert task["is_high_priority"] is True
 
     # create maintenance task due in 30 days 
     due_30 = date.today() + timedelta(days=30)
     r = client.post(
         "/maintenance/",
-        json={"inventory_item_id": item_a_id, "title": "Deep service", "due_date": str(due_30)},
+        json={
+            "inventory_item_id": item_a_id,
+            "title": "Deep service",
+            "due_date": str(due_30),
+            "status": "IN_PROGRESS",
+        },
         headers=auth_headers(token_a),
     )
     assert r.status_code == 200
@@ -261,11 +300,11 @@ def test_maintenance_crud_upcoming_and_ownership(client: TestClient):
     # mark first task as completed
     r = client.put(
         f"/maintenance/{task_id}",
-        json={"status": "COMPLETED"},
+        json={"status": "CLOSED"},
         headers=auth_headers(token_a),
     )
     assert r.status_code == 200
-    assert r.json()["status"] == "COMPLETED"
+    assert r.json()["status"] == "CLOSED"
 
     r = client.get("/maintenance/upcoming?days=7", headers=auth_headers(token_a))
     assert r.status_code == 200
@@ -299,11 +338,11 @@ def test_dashboard_summary_counts(client: TestClient):
     )
     assert r.status_code == 200
 
-    # create 1 open maintenance task (PENDING)
+    # create 1 open maintenance task (OPEN)
     due = date.today() + timedelta(days=2)
     r = client.post(
         "/maintenance/",
-        json={"inventory_item_id": item1_id, "title": "Check Item 1", "due_date": str(due)},
+        json={"inventory_item_id": item1_id, "title": "Check Item 1", "due_date": str(due), "status": "OPEN"},
         headers=auth_headers(token_a),
     )
     assert r.status_code == 200

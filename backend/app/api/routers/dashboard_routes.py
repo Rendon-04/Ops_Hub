@@ -26,7 +26,7 @@ def get_dashboard_summary(
 
     open_tasks_count = db.query(MaintenanceTask).filter(
         MaintenanceTask.user_id == current_user.id,
-        MaintenanceTask.status == "PENDING"
+        MaintenanceTask.status.in_(["OPEN", "IN_PROGRESS", "BLOCKED"])
     ).count()
 
     return {

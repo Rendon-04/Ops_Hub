@@ -15,6 +15,7 @@ from app.api.routers import (
     inventory_routes,
     maintenance_routes,
     dashboard_routes,
+    incident_routes,
 )
 
 app = FastAPI()
@@ -37,6 +38,9 @@ app.include_router(vendor_routes.router)
 app.include_router(inventory_routes.router)
 app.include_router(maintenance_routes.router)
 app.include_router(dashboard_routes.router)
+app.include_router(incident_routes.incidents_router)
+app.include_router(incident_routes.incident_attachments_router)
+app.include_router(incident_routes.attachments_router)
 
 @app.on_event("startup")
 def on_startup():
@@ -45,4 +49,3 @@ def on_startup():
 @app.get("/")
 def health_check():
     return {"status": "ok"}
-

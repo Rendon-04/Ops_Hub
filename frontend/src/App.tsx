@@ -10,6 +10,8 @@ import { InventoryList } from './components/InventoryList';
 import { InventoryDetail } from './components/InventoryDetail';
 import { TasksList } from './components/TasksList';
 import { TaskDetail } from './components/TaskDetail';
+import { IncidentReports } from './components/IncidentReports';
+import { IncidentDetail } from './components/IncidentDetail';
 import { AppShell } from './components/AppShell';
 import { Toaster } from "sonner";
 
@@ -23,7 +25,9 @@ type Route =
   | { page: 'inventory' }
   | { page: 'inventory-detail'; id: string }
   | { page: 'tasks' }
-  | { page: 'task-detail'; id: string };
+  | { page: 'task-detail'; id: string }
+  | { page: 'incidents' }
+  | { page: 'incident-detail'; id: string };
 
 export default function App() {
   const [route, setRoute] = useState<Route>({ page: 'login' });
@@ -166,6 +170,17 @@ export default function App() {
             accessToken={accessToken}
             taskId={route.id}
             onNavigateBack={() => setRoute({ page: 'tasks' })}
+          />
+        )}
+        {route.page === 'incidents' && (
+          <IncidentReports
+            onNavigate={(id) => setRoute({ page: 'incident-detail', id })}
+          />
+        )}
+        {route.page === 'incident-detail' && (
+          <IncidentDetail
+            incidentId={route.id}
+            onNavigateBack={() => setRoute({ page: 'incidents' })}
           />
         )}
       </AppShell>

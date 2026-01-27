@@ -107,10 +107,30 @@ export function InventoryDetail({
     }
   };
 
-  const getStatus = (quantity: number, reorderThreshold: number) => {
-    if (quantity === 0) return { label: 'Out of Stock', color: 'red' };
-    if (quantity <= reorderThreshold) return { label: 'Low Stock', color: 'orange' };
-    return { label: 'In Stock', color: 'green' };
+  const handleCheck = async () => {
+    try {
+      const invIdNum = Number(inventoryId);
+      const res = await api.post(`/inventory/${invIdNum}/check`);
+      setItem(res.data);
+      toast.success('Inventory check recorded');
+    } catch (error: any) {
+      console.error('Inventory check error:', error);
+      const msg = error?.response?.data?.detail || 'Failed to record inventory check';
+      toast.error(msg);
+    }
+  };
+
+  const getStatus = (item: InventoryItem) => {
+    if (item.status) return item.status;
+    if (item.quantity === 0) return 'Out';
+    if (item.quantity <= item.reorder_threshold) return 'Low';
+    return 'In Stock';
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === 'In Stock') return 'green';
+    if (status === 'Low') return 'orange';
+    return 'red';
   };
 
   if (loading) {
@@ -132,7 +152,8 @@ export function InventoryDetail({
     );
   }
 
-  const status = getStatus(item.quantity, item.reorder_threshold);
+  const status = getStatus(item);
+  const statusColor = getStatusColor(status);
 
   return (
     <div>
@@ -151,18 +172,24 @@ export function InventoryDetail({
             <div className="flex items-center gap-4">
               <span
                 className={`px-3 py-1 rounded-full inline-block ${
-                  status.color === 'green'
+                  statusColor === 'green'
                     ? 'bg-green-100 text-green-800'
-                    : status.color === 'orange'
+                    : statusColor === 'orange'
                     ? 'bg-orange-100 text-orange-800'
                     : 'bg-red-100 text-red-800'
                 }`}
               >
-                {status.label}
+                {status}
               </span>
             </div>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={handleCheck}
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Mark Checked
+            </button>
             <button
               onClick={() => setShowEditForm(true)}
               className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
@@ -190,9 +217,48 @@ export function InventoryDetail({
             <h3 className="mb-2">Quantity</h3>
             <p className="text-gray-600">{String(item.quantity ?? 0)}</p>
           </div>
-        </div>
 
-      
+          <div>
+            <h3 className="mb-2">Category</h3>
+            <p className="text-gray-600">{item.category || '—'}</p>
+          </div>
+
+          <div>
+            <h3 className="mb-2">Minimum Threshold</h3>
+            <p className="text-gray-600">{String(item.reorder_threshold ?? 0)}</p>
+          </div>
+
+          <div>
+            <h3 className="mb-2">Reorder Link</h3>
+            {item.reorder_url ? (
+              <a
+                href={item.reorder_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-blue-600 hover:underline break-all"
+              >
+                {item.reorder_url}
+              </a>
+            ) : (
+              <p className="text-gray-600">—</p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="mb-2">Last Checked</h3>
+            <p className="text-gray-600">
+              {item.last_checked_at
+                ? new Date(item.last_checked_at).toLocaleString()
+                : 'Not checked yet'}
+            </p>
+          </div>
+        </div>
+        {item.notes && (
+          <div className="mt-6">
+            <h3 className="mb-2">Notes</h3>
+            <p className="text-gray-600 whitespace-pre-line">{item.notes}</p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
@@ -220,12 +286,22 @@ export function InventoryDetail({
                     <td className="px-4 py-3">
                       <span
                         className={`px-3 py-1 rounded-full inline-block ${
-                          task.status === 'PENDING'
+                          task.status === 'OPEN'
                             ? 'bg-blue-100 text-blue-800'
+                            : task.status === 'IN_PROGRESS'
+                            ? 'bg-orange-100 text-orange-800'
+                            : task.status === 'BLOCKED'
+                            ? 'bg-red-100 text-red-800'
                             : 'bg-green-100 text-green-800'
                         }`}
                       >
-                        {task.status === 'PENDING' ? 'Open' : 'Completed'}
+                        {task.status === 'IN_PROGRESS'
+                          ? 'In Progress'
+                          : task.status === 'BLOCKED'
+                          ? 'Blocked'
+                          : task.status === 'CLOSED'
+                          ? 'Closed'
+                          : 'Open'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-600">

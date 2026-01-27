@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 
 from app.db.session import get_db
 from app.auth.deps import get_current_user
@@ -26,14 +27,25 @@ def validate_vendor_id(db: Session, vendor_id: Optional[int], current_user: User
     return vendor_id
 
 def to_inventory_out(item: InventoryItem) -> dict:
+    if item.quantity <= 0:
+        status = "Out"
+    elif item.quantity <= item.reorder_threshold:
+        status = "Low"
+    else:
+        status = "In Stock"
+
     return {
         "id": item.id,
         "name": item.name,
-        "sku": item.sku,
+        "category": item.category,
         "quantity": item.quantity,
         "reorder_threshold": item.reorder_threshold,
+        "reorder_url": item.reorder_url,
+        "notes": item.notes,
+        "last_checked_at": item.last_checked_at,
         "vendor_id": item.vendor_id,
-        "is_low_stock": item.quantity <= item.reorder_threshold
+        "is_low_stock": item.quantity <= item.reorder_threshold,
+        "status": status,
     }
 
 
@@ -54,9 +66,11 @@ def create_item(
         user_id=current_user.id,
         vendor_id=vendor_id,
         name=payload.name,
-        sku=payload.sku,
+        category=payload.category,
         quantity=payload.quantity,
-        reorder_threshold=payload.reorder_threshold
+        reorder_threshold=payload.reorder_threshold,
+        reorder_url=payload.reorder_url,
+        notes=payload.notes,
     )
 
     db.add(item)
@@ -135,12 +149,16 @@ def update_item(
 
     if payload.name is not None:
         item.name = payload.name
-    if payload.sku is not None:
-        item.sku = payload.sku
+    if payload.category is not None:
+        item.category = payload.category
     if payload.quantity is not None:
         item.quantity = payload.quantity
     if payload.reorder_threshold is not None:
         item.reorder_threshold = payload.reorder_threshold
+    if payload.reorder_url is not None:
+        item.reorder_url = payload.reorder_url
+    if payload.notes is not None:
+        item.notes = payload.notes
 
     db.commit()
     db.refresh(item)
@@ -168,5 +186,42 @@ def delete_item(
     return {"message": "Item deleted"}
 
 
+@router.post("/{item_id}/check", response_model=InventoryOut)
+def check_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    item = db.query(InventoryItem).filter(
+        InventoryItem.id == item_id,
+        InventoryItem.user_id == current_user.id
+    ).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    item.last_checked_at = datetime.utcnow()
+    db.commit()
+    db.refresh(item)
+
+    return to_inventory_out(item)
+
+
+@router.post("/check")
+def check_inventory(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    checked_at = datetime.utcnow()
+    items = db.query(InventoryItem).filter(
+        InventoryItem.user_id == current_user.id
+    ).all()
+
+    for item in items:
+        item.last_checked_at = checked_at
+
+    db.commit()
+
+    return {"checked_count": len(items), "checked_at": checked_at.isoformat()}
 
 

@@ -4,8 +4,9 @@ import { api } from '../api/client';
 import { TaskForm } from './TaskForm';
 import { ConfirmModal } from './ConfirmModal';
 import { toast } from 'sonner';
-import type { Task } from "../types/task.ts";
+import type { Task, TaskStatus } from "../types/task.ts";
 import type { InventoryItem } from "../types/inventory";
+import type { Vendor } from "../types/vendor";
 
 
 interface TasksListProps {
@@ -16,10 +17,12 @@ interface TasksListProps {
 export function TasksList({ onNavigate }: TasksListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
   const [inventoryFilter, setInventoryFilter] = useState('');
+  const [vendorFilter, setVendorFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
@@ -39,19 +42,25 @@ export function TasksList({ onNavigate }: TasksListProps) {
       filtered = filtered.filter((task) => String(task.inventory_item_id) === inventoryFilter);
     }
 
+    if (vendorFilter) {
+      filtered = filtered.filter((task) => String(task.vendor_id ?? "") === vendorFilter);
+    }
+
     setFilteredTasks(filtered);
-  }, [statusFilter, inventoryFilter, tasks]);
+  }, [statusFilter, inventoryFilter, vendorFilter, tasks]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [tasksRes, inventoryRes] = await Promise.all([
+      const [tasksRes, inventoryRes, vendorsRes] = await Promise.all([
         api.get("/maintenance"),
         api.get("/inventory"),
+        api.get("/vendors"),
       ]);
 
       setTasks(tasksRes.data || []);
       setInventory(inventoryRes.data || []);
+      setVendors(vendorsRes.data || []);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error("Failed to load tasks");
@@ -82,10 +91,10 @@ export function TasksList({ onNavigate }: TasksListProps) {
 
   const handleComplete = async (task: Task) => {
     try {
-      const newStatus = task.status === "PENDING" ? "COMPLETED" : "PENDING";
+      const newStatus: TaskStatus = task.status === "CLOSED" ? "OPEN" : "CLOSED";
       await api.put(`/maintenance/${task.id}`, { status: newStatus });
 
-      toast.success(newStatus === "COMPLETED" ? "Task marked as completed" : "Task reopened");
+      toast.success(newStatus === "CLOSED" ? "Task closed" : "Task reopened");
       fetchData();
     } catch (error: any) {
       console.error("Update task error:", error);
@@ -113,6 +122,26 @@ export function TasksList({ onNavigate }: TasksListProps) {
     if (inventoryItemId === null) return "—"; 
     const item = inventory.find((i) => i.id === inventoryItemId);
     return item ? item.name : "Unknown";
+  };
+
+  const getVendorName = (vendorId: number | null) => {
+    if (vendorId === null) return "—";
+    const vendor = vendors.find((v) => v.id === vendorId);
+    return vendor ? vendor.name : "Unknown";
+  };
+
+  const getStatusStyle = (status: TaskStatus) => {
+    switch (status) {
+      case "OPEN":
+        return "bg-blue-100 text-blue-800";
+      case "IN_PROGRESS":
+        return "bg-orange-100 text-orange-800";
+      case "BLOCKED":
+        return "bg-red-100 text-red-800";
+      case "CLOSED":
+      default:
+        return "bg-green-100 text-green-800";
+    }
   };
   
 
@@ -143,15 +172,17 @@ export function TasksList({ onNavigate }: TasksListProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All Statuses</option>
-          <option value="PENDING">Open</option>
-          <option value="COMPLETED">Completed</option>
+          <option value="OPEN">Open</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="BLOCKED">Blocked</option>
+          <option value="CLOSED">Closed</option>
         </select>
 
         <select
@@ -166,17 +197,30 @@ export function TasksList({ onNavigate }: TasksListProps) {
             </option>
           ))}
         </select>
+
+        <select
+          value={vendorFilter}
+          onChange={(e) => setVendorFilter(e.target.value)}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Vendors</option>
+          {vendors.map((vendor) => (
+            <option key={vendor.id} value={String(vendor.id)}>
+              {vendor.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {filteredTasks.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <h3 className="mb-2">No tasks found</h3>
           <p className="text-gray-600 mb-6">
-            {statusFilter || inventoryFilter
+            {statusFilter || inventoryFilter || vendorFilter
               ? 'Try adjusting your filters.'
               : 'Get started by creating your first task.'}
           </p>
-          {!statusFilter && !inventoryFilter && (
+          {!statusFilter && !inventoryFilter && !vendorFilter && (
             <button
               onClick={() => setShowForm(true)}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 inline-flex items-center gap-2"
@@ -192,9 +236,11 @@ export function TasksList({ onNavigate }: TasksListProps) {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-6 py-3">Title</th>
+                <th className="text-left px-6 py-3">Priority</th>
                 <th className="text-left px-6 py-3">Status</th>
                 <th className="text-left px-6 py-3">Due Date</th>
-                <th className="text-left px-6 py-3">Inventory</th>
+                <th className="text-left px-6 py-3">Category</th>
+                <th className="text-left px-6 py-3">Type</th>
                 <th className="text-right px-6 py-3">Actions</th>
               </tr>
             </thead>
@@ -203,33 +249,61 @@ export function TasksList({ onNavigate }: TasksListProps) {
                 <tr key={task.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">{task.title}</td>
                   <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full inline-block ${
-                          task.status === 'PENDING'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
+                    <span
+                      className={`px-3 py-1 rounded-full inline-block ${
+                        task.is_high_priority
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {task.is_high_priority ? 'High' : 'Normal'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-3 py-1 rounded-full inline-block ${getStatusStyle(task.status)}`}>
+                      {task.status === "IN_PROGRESS"
+                        ? "In Progress"
+                        : task.status === "CLOSED"
+                        ? "Closed"
+                        : task.status === "BLOCKED"
+                        ? "Blocked"
+                        : "Open"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {task.due_date ? new Date(task.due_date).toLocaleDateString() : '—'}
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {task.task_type === "INVENTORY"
+                      ? "Inventory"
+                      : task.task_type === "VENDOR"
+                      ? "Vendor"
+                      : task.task_type === "EVENT"
+                      ? "Event"
+                      : "Other"}
+                  </td>
+                  <td className="px-6 py-4 text-gray-600">
+                    {task.task_type === "INVENTORY"
+                      ? getInventoryName(task.inventory_item_id)
+                      : task.task_type === "VENDOR"
+                      ? getVendorName(task.vendor_id)
+                      : task.task_type === "EVENT"
+                      ? task.event_name || "—"
+                      : task.event_name || "—"}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleComplete(task)}
+                        className={`p-2 rounded-lg ${
+                          task.status === 'CLOSED'
+                            ? 'text-gray-600 hover:bg-gray-100'
+                            : 'text-green-600 hover:bg-green-50'
                         }`}
+                        title={task.status === 'CLOSED' ? 'Reopen' : 'Close'}
                       >
-                        {task.status === 'PENDING' ? 'Open' : 'Completed'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {task.due_date ? new Date(task.due_date).toLocaleDateString() : '—'}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">{getInventoryName(task.inventory_item_id)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleComplete(task)}
-                          className={`p-2 rounded-lg ${
-                            task.status === 'PENDING'
-                              ? 'text-green-600 hover:bg-green-50'
-                              : 'text-gray-600 hover:bg-gray-100'
-                          }`}
-                          title={task.status === 'PENDING' ? 'Mark as completed' : 'Reopen'}
-                        >
-                          <CheckCircle2 size={18} />
-                        </button>
+                        <CheckCircle2 size={18} />
+                      </button>
                       <button
                         onClick={() => onNavigate(String(task.id))}
                         className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
@@ -267,6 +341,7 @@ export function TasksList({ onNavigate }: TasksListProps) {
         <TaskForm
           task={editingTask}
           inventory={inventory}
+          vendors={vendors}
           onSave={handleCreateOrUpdate}
           onCancel={() => {
             setShowForm(false);

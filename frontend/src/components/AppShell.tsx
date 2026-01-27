@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, ChevronDown, LayoutDashboard, Users, Package, ClipboardList } from 'lucide-react';
+import { Menu, X, ChevronDown, LayoutDashboard, Users, Package, ClipboardList, AlertTriangle } from 'lucide-react';
 
 interface AppShellProps {
   userName: string;
@@ -18,6 +18,7 @@ export function AppShell({ userName, onLogout, currentPage, onNavigate, children
     { name: 'Vendors', page: 'vendors', icon: Users },
     { name: 'Inventory', page: 'inventory', icon: Package },
     { name: 'Maintenance Tasks', page: 'tasks', icon: ClipboardList },
+    { name: 'Incident Reports', page: 'incidents', icon: AlertTriangle },
   ];
 
   return (
@@ -81,7 +82,8 @@ export function AppShell({ userName, onLogout, currentPage, onNavigate, children
               const isActive = currentPage === item.page || 
                                (item.page === 'vendors' && currentPage === 'vendor-detail') ||
                                (item.page === 'inventory' && currentPage === 'inventory-detail') ||
-                               (item.page === 'tasks' && currentPage === 'task-detail');
+                               (item.page === 'tasks' && currentPage === 'task-detail') ||
+                               (item.page === 'incidents' && currentPage === 'incident-detail');
               
               return (
                 <button

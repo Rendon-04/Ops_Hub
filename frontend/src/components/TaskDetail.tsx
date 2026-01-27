@@ -4,8 +4,9 @@ import { api } from '../api/client';
 import { TaskForm } from './TaskForm';
 import { ConfirmModal } from './ConfirmModal';
 import { toast } from 'sonner';
-import type { Task } from "../types/task.ts";
+import type { Task, TaskStatus, TaskType } from "../types/task.ts";
 import type { InventoryItem } from "../types/inventory";
+import type { Vendor } from "../types/vendor";
 
 
 
@@ -38,6 +39,8 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
   const [task, setTask] = useState<Task | null>(null);
   const [inventoryItem, setInventoryItem] = useState<InventoryItem | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendor, setVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -49,9 +52,10 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [taskRes, inventoryRes] = await Promise.all([
+      const [taskRes, inventoryRes, vendorsRes] = await Promise.all([
         api.get(`/maintenance/${taskId}`),
         api.get('/inventory'),
+        api.get('/vendors'),
       ]);
 
       const taskData: Task = taskRes.data;
@@ -59,12 +63,21 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
 
       const inventoryData: InventoryItem[] = inventoryRes.data || [];
       setInventory(inventoryData);
+      const vendorsData: Vendor[] = vendorsRes.data || [];
+      setVendors(vendorsData);
 
       if (taskData.inventory_item_id) {
         const foundItem = inventoryData.find((i) => i.id === taskData.inventory_item_id) || null;
         setInventoryItem(foundItem);
       } else {
         setInventoryItem(null);
+      }
+
+      if (taskData.vendor_id) {
+        const foundVendor = vendorsData.find((v) => v.id === taskData.vendor_id) || null;
+        setVendor(foundVendor);
+      } else {
+        setVendor(null);
       }
     } catch (error: any) {
       const status = error?.response?.status;
@@ -98,10 +111,10 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
     if (!task) return;
 
     try {
-      const nextStatus: Task['status'] = task.status === 'PENDING' ? 'COMPLETED' : 'PENDING';
+      const nextStatus: TaskStatus = task.status === 'CLOSED' ? 'OPEN' : 'CLOSED';
       await api.put(`/maintenance/${taskId}`, { status: nextStatus });
 
-      toast.success(nextStatus === 'COMPLETED' ? 'Task marked as completed' : 'Task reopened');
+      toast.success(nextStatus === 'CLOSED' ? 'Task closed' : 'Task reopened');
       fetchData();
     } catch (error: any) {
       console.error('Update task error:', error);
@@ -120,6 +133,29 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
       const msg = error?.response?.data?.detail || 'Failed to delete task';
       toast.error(msg);
     }
+  };
+
+  const getTypeLabel = (taskType: TaskType) => {
+    switch (taskType) {
+      case "EVENT":
+        return "Event";
+      case "INVENTORY":
+        return "Inventory";
+      case "VENDOR":
+        return "Vendor";
+      case "OTHER":
+      default:
+        return "Other";
+    }
+  };
+
+  const getLinkedValue = () => {
+    if (!task) return "—";
+    if (task.task_type === "INVENTORY") return inventoryItem?.name || "Not assigned";
+    if (task.task_type === "VENDOR") return vendor?.name || "Not assigned";
+    if (task.task_type === "EVENT") return task.event_name || "Not assigned";
+    if (task.task_type === "OTHER") return task.event_name || "Not specified";
+    return "—";
   };
 
   if (loading) {
@@ -157,26 +193,41 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
             <h1 className="mb-2">{task.title}</h1>
             <span
               className={`px-3 py-1 rounded-full inline-block ${
-                task.status === 'PENDING'
+                task.status === 'OPEN'
                   ? 'bg-blue-100 text-blue-800'
+                  : task.status === 'IN_PROGRESS'
+                  ? 'bg-orange-100 text-orange-800'
+                  : task.status === 'BLOCKED'
+                  ? 'bg-red-100 text-red-800'
                   : 'bg-green-100 text-green-800'
               }`}
             >
-              {task.status === 'PENDING' ? 'Open' : 'Completed'}
+              {task.status === 'IN_PROGRESS'
+                ? 'In Progress'
+                : task.status === 'BLOCKED'
+                ? 'Blocked'
+                : task.status === 'CLOSED'
+                ? 'Closed'
+                : 'Open'}
             </span>
+            {task.is_high_priority && (
+              <span className="ml-2 px-3 py-1 rounded-full inline-block bg-red-100 text-red-800">
+                High Priority
+              </span>
+            )}
           </div>
 
           <div className="flex gap-2">
             <button
               onClick={handleToggleStatus}
               className={`flex items-center gap-2 px-4 py-2 border rounded-lg ${
-                task.status === 'PENDING'
-                  ? 'text-green-600 border-green-600 hover:bg-green-50'
-                  : 'text-gray-600 border-gray-600 hover:bg-gray-50'
+                task.status === 'CLOSED'
+                  ? 'text-gray-600 border-gray-600 hover:bg-gray-50'
+                  : 'text-green-600 border-green-600 hover:bg-green-50'
               }`}
             >
               <CheckCircle2 size={18} />
-              {task.status === 'PENDING' ? 'Complete' : 'Reopen'}
+              {task.status === 'CLOSED' ? 'Reopen' : 'Close'}
             </button>
 
             <button
@@ -197,7 +248,7 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <h3 className="mb-2">Due Date</h3>
             <p className="text-gray-600">
@@ -206,16 +257,29 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
           </div>
 
           <div>
-            <h3 className="mb-2">Inventory Item</h3>
-            <p className="text-gray-600">{inventoryItem?.name || 'Not assigned'}</p>
+            <h3 className="mb-2">Type</h3>
+            <p className="text-gray-600">{getTypeLabel(task.task_type)}</p>
+          </div>
+
+          <div>
+            <h3 className="mb-2">Linked To</h3>
+            <p className="text-gray-600">{getLinkedValue()}</p>
           </div>
         </div>
+
+        {task.notes && (
+          <div className="mt-6">
+            <h3 className="mb-2">Notes</h3>
+            <p className="text-gray-600 whitespace-pre-line">{task.notes}</p>
+          </div>
+        )}
       </div>
 
       {showEditForm && (
         <TaskForm
           task={task}
           inventory={inventory}
+          vendors={vendors}
           onSave={handleUpdate}
           onCancel={() => setShowEditForm(false)}
         />

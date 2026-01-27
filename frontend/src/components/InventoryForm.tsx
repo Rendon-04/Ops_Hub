@@ -15,7 +15,9 @@ interface InventoryFormProps {
 export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryFormProps) {
   // ✅ keep inputs as strings (easier with form controls)
   const [name, setName] = useState("");
-  const [skuInput, setSkuInput] = useState(""); // ✅ renamed for clarity
+  const [category, setCategory] = useState("");
+  const [reorderUrl, setReorderUrl] = useState("");
+  const [notes, setNotes] = useState("");
   const [vendorId, setVendorId] = useState(""); // string form value
   const [quantity, setQuantity] = useState("0");
   const [reorderThreshold, setReorderThreshold] = useState("0");
@@ -26,13 +28,17 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
   useEffect(() => {
     if (item) {
       setName(item.name ?? "");
-      setSkuInput(item.sku ?? ""); // ✅ sku can be null in your type
+      setCategory(item.category ?? "");
+      setReorderUrl(item.reorder_url ?? "");
+      setNotes(item.notes ?? "");
       setVendorId(item.vendor_id !== null ? String(item.vendor_id) : "");
       setQuantity(String(item.quantity ?? 0));
       setReorderThreshold(String(item.reorder_threshold ?? 0));
     } else {
       setName("");
-      setSkuInput("");
+      setCategory("");
+      setReorderUrl("");
+      setNotes("");
       setVendorId("");
       setQuantity("0");
       setReorderThreshold("0");
@@ -46,12 +52,6 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
     if (!name.trim()) {
       nextErrors.name = "Item name is required";
     }
-
-    // ✅ If SKU is OPTIONAL now, remove this validation.
-    // If you still want it required, keep the check below.
-    // if (!skuInput.trim()) {
-    //   nextErrors.sku = "SKU is required";
-    // }
 
     const qty = Number(quantity);
     if (!Number.isFinite(qty) || qty < 0) {
@@ -75,10 +75,9 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
     const payload: Partial<InventoryItem> = {
       name: name.trim(),
 
-      // ✅ THIS is the line you asked about:
-      // If empty string, send null to match InventoryItem.sku: string | null
-      sku: skuInput.trim() === "" ? null : skuInput.trim(),
-
+      category: category.trim() === "" ? null : category.trim(),
+      reorder_url: reorderUrl.trim() === "" ? null : reorderUrl.trim(),
+      notes: notes.trim() === "" ? null : notes.trim(),
       vendor_id: vendorId === "" ? null : Number(vendorId),
       quantity: Number(quantity),
       reorder_threshold: Number(reorderThreshold),
@@ -120,19 +119,17 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
           </div>
 
           <div>
-            <label htmlFor="sku" className="block mb-2">
-              SKU {/* ✅ remove * if optional */}
+            <label htmlFor="category" className="block mb-2">
+              Category
             </label>
             <input
-              id="sku"
+              id="category"
               type="text"
-              value={skuInput}
-              onChange={(e) => setSkuInput(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.sku ? "border-red-500" : "border-gray-300"
-              }`}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Coffee, snacks, cleaning supplies"
             />
-            {errors.sku && <p className="text-red-500 mt-1">{errors.sku}</p>}
           </div>
 
           <div>
@@ -156,7 +153,7 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
 
           <div>
             <label htmlFor="quantity" className="block mb-2">
-              Quantity <span className="text-red-500">*</span>
+              Quantity Needed <span className="text-red-500">*</span>
             </label>
             <input
               id="quantity"
@@ -188,6 +185,34 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
             {errors.reorder_threshold && (
               <p className="text-red-500 mt-1">{errors.reorder_threshold}</p>
             )}
+          </div>
+
+          <div>
+            <label htmlFor="reorderUrl" className="block mb-2">
+              Reorder Link
+            </label>
+            <input
+              id="reorderUrl"
+              type="url"
+              value={reorderUrl}
+              onChange={(e) => setReorderUrl(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="https://vendor.example.com/reorder"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block mb-2">
+              Notes
+            </label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Optional notes"
+            />
           </div>
 
           <div className="flex gap-3 pt-4">

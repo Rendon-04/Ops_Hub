@@ -104,10 +104,17 @@ export function InventoryList({ onNavigate }: InventoryListProps) {
     return vendor?.name || "Unknown";
   };
 
-  const getStatus = (quantity: number, reorderThreshold: number) => {
-    if (quantity === 0) return { label: "Out of Stock", color: "red" };
-    if (quantity <= reorderThreshold) return { label: "Low Stock", color: "orange" };
-    return { label: "In Stock", color: "green" };
+  const getStatus = (item: InventoryItem) => {
+    if (item.status) return item.status;
+    if (item.quantity === 0) return "Out";
+    if (item.quantity <= item.reorder_threshold) return "Low";
+    return "In Stock";
+  };
+
+  const getStatusColor = (status: string) => {
+    if (status === "In Stock") return "green";
+    if (status === "Low") return "orange";
+    return "red";
   };
 
   if (loading) {
@@ -188,6 +195,7 @@ export function InventoryList({ onNavigate }: InventoryListProps) {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-6 py-3">Item Name</th>
+                <th className="text-left px-6 py-3">Category</th>
                 <th className="text-left px-6 py-3">Vendor</th>
                 <th className="text-left px-6 py-3">Quantity</th>
                 <th className="text-left px-6 py-3">Status</th>
@@ -196,23 +204,25 @@ export function InventoryList({ onNavigate }: InventoryListProps) {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredInventory.map((item) => {
-                const status = getStatus(item.quantity, item.reorder_threshold);
+                const status = getStatus(item);
+                const statusColor = getStatusColor(status);
                 return (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">{item.name}</td>
+                    <td className="px-6 py-4 text-gray-600">{item.category || "—"}</td>
                     <td className="px-6 py-4 text-gray-600">{getVendorName(item.vendor_id)}</td>
                     <td className="px-6 py-4 text-gray-600">{item.quantity}</td>
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 rounded-full inline-block ${
-                          status.color === 'green'
+                          statusColor === 'green'
                             ? 'bg-green-100 text-green-800'
-                            : status.color === 'orange'
+                            : statusColor === 'orange'
                             ? 'bg-orange-100 text-orange-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {status.label}
+                        {status}
                       </span>
                     </td>
                     <td className="px-6 py-4">
