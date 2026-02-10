@@ -14,3 +14,12 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## API base URL
+
+Set the backend base URL using `VITE_API_BASE_URL` and reference it via `import.meta.env`.
+
+```ts
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const res = await fetch(`${API_BASE}/auth/google/login`);
+```
