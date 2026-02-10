@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type { Task, TaskStatus, TaskType } from "../types/task.ts";
 import type { InventoryItem } from "../types/inventory";
 import type { Vendor } from "../types/vendor";
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 
 
@@ -170,7 +171,7 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 mb-4">Task not found</p>
-        <button onClick={onNavigateBack} className="text-blue-600 hover:underline">
+        <button onClick={onNavigateBack} className="text-[#06cdfe] hover:underline">
           Go back
         </button>
       </div>
@@ -178,52 +179,54 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <button
         onClick={onNavigateBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
       >
         <ArrowLeft size={20} />
         Back to Tasks
       </button>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-start justify-between mb-6">
+      <Card>
+        <CardHeader className="flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="mb-2">{task.title}</h1>
-            <span
-              className={`px-3 py-1 rounded-full inline-block ${
-                task.status === 'OPEN'
-                  ? 'bg-blue-100 text-blue-800'
-                  : task.status === 'IN_PROGRESS'
-                  ? 'bg-orange-100 text-orange-800'
+            <CardTitle className="text-2xl">{task.title}</CardTitle>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <span
+                className={`px-3 py-1 rounded-full inline-block text-xs font-medium ${
+                  task.status === 'OPEN'
+                    ? 'bg-[#e90786]/10 text-[#e90786]'
+                    : task.status === 'IN_PROGRESS'
+                    ? 'bg-[#06cdfe]/15 text-[#06cdfe]'
+                    : task.status === 'BLOCKED'
+                    ? 'bg-[#dfff35]/70 text-black'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                {task.status === 'IN_PROGRESS'
+                  ? 'In Progress'
                   : task.status === 'BLOCKED'
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-green-100 text-green-800'
-              }`}
-            >
-              {task.status === 'IN_PROGRESS'
-                ? 'In Progress'
-                : task.status === 'BLOCKED'
-                ? 'Blocked'
-                : task.status === 'CLOSED'
-                ? 'Closed'
-                : 'Open'}
-            </span>
-            {task.is_high_priority && (
-              <span className="ml-2 px-3 py-1 rounded-full inline-block bg-red-100 text-red-800">
-                High Priority
+                  ? 'Blocked'
+                  : task.status === 'CLOSED'
+                  ? 'Closed'
+                  : 'Open'}
               </span>
-            )}
+              {task.is_high_priority && (
+                <span className="px-3 py-1 rounded-full inline-block text-xs font-medium bg-[#e90786]/10 text-[#e90786]">
+                  High Priority
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleToggleStatus}
               className={`flex items-center gap-2 px-4 py-2 border rounded-lg ${
                 task.status === 'CLOSED'
-                  ? 'text-gray-600 border-gray-600 hover:bg-gray-50'
-                  : 'text-green-600 border-green-600 hover:bg-green-50'
+                  ? 'text-gray-600 border-gray-300 hover:bg-gray-50'
+                  : 'text-[#06cdfe] border-[#06cdfe] hover:bg-[#06cdfe]/10'
               }`}
             >
               <CheckCircle2 size={18} />
@@ -232,7 +235,7 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
 
             <button
               onClick={() => setShowEditForm(true)}
-              className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
+              className="flex items-center gap-2 px-4 py-2 text-[#06cdfe] border border-[#06cdfe] rounded-lg hover:bg-[#06cdfe]/10"
             >
               <Edit2 size={18} />
               Edit
@@ -240,40 +243,42 @@ export function TaskDetail({ accessToken, taskId, onNavigateBack }: TaskDetailPr
 
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+              className="flex items-center gap-2 px-4 py-2 text-[#e90786] border border-[#e90786] rounded-lg hover:bg-[#e90786]/10"
             >
               <Trash2 size={18} />
               Delete
             </button>
           </div>
-        </div>
+        </CardHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <h3 className="mb-2">Due Date</h3>
-            <p className="text-gray-600">
-              {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'Not set'}
-            </p>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Due Date</h3>
+              <p className="text-sm text-gray-600">
+                {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'Not set'}
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Type</h3>
+              <p className="text-sm text-gray-600">{getTypeLabel(task.task_type)}</p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Linked To</h3>
+              <p className="text-sm text-gray-600">{getLinkedValue()}</p>
+            </div>
           </div>
 
-          <div>
-            <h3 className="mb-2">Type</h3>
-            <p className="text-gray-600">{getTypeLabel(task.task_type)}</p>
-          </div>
-
-          <div>
-            <h3 className="mb-2">Linked To</h3>
-            <p className="text-gray-600">{getLinkedValue()}</p>
-          </div>
-        </div>
-
-        {task.notes && (
-          <div className="mt-6">
-            <h3 className="mb-2">Notes</h3>
-            <p className="text-gray-600 whitespace-pre-line">{task.notes}</p>
-          </div>
-        )}
-      </div>
+          {task.notes && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Notes</h3>
+              <p className="text-sm text-gray-600 whitespace-pre-line">{task.notes}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {showEditForm && (
         <TaskForm

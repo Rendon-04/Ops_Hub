@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { VendorForm } from "./VendorForm";
 import { ConfirmModal } from "./ConfirmModal";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface Vendor {
   id: number;
@@ -113,7 +114,7 @@ export function VendorDetail({
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 mb-4">Vendor not found</p>
-        <button onClick={onNavigateBack} className="text-blue-600 hover:underline">
+        <button onClick={onNavigateBack} className="text-[#06cdfe] hover:underline">
           Go back
         </button>
       </div>
@@ -121,64 +122,66 @@ export function VendorDetail({
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <button
         onClick={onNavigateBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
       >
         <ArrowLeft size={20} />
         Back to Vendors
       </button>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-start justify-between mb-6">
+      <Card>
+        <CardHeader className="flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="mb-2">{vendor.name}</h1>
+            <CardTitle className="text-2xl">{vendor.name}</CardTitle>
             {(vendor.email || vendor.phone) && (
-              <p className="text-gray-600">{vendor.email || vendor.phone}</p>
+              <p className="text-sm text-gray-600 mt-1">{vendor.email || vendor.phone}</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowEditForm(true)}
-              className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
+              className="flex items-center gap-2 px-4 py-2 text-[#06cdfe] border border-[#06cdfe] rounded-lg hover:bg-[#06cdfe]/10"
             >
               <Edit2 size={18} />
               Edit
             </button>
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+              className="flex items-center gap-2 px-4 py-2 text-[#e90786] border border-[#e90786] rounded-lg hover:bg-[#e90786]/10"
             >
               <Trash2 size={18} />
               Delete
             </button>
           </div>
-        </div>
+        </CardHeader>
+        <CardContent>
+          {(vendor.email || vendor.phone) && (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Contact</h3>
+              <p className="text-sm text-gray-600">{vendor.email || "—"} · {vendor.phone || "—"}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {(vendor.email || vendor.phone) && (
-          <div>
-            <h3 className="mb-2">Contact</h3>
-            <p className="text-gray-600">{vendor.email || "—"} · {vendor.phone || "—"}</p>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2>Inventory from this Vendor</h2>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Inventory from this Vendor</CardTitle>
+        </CardHeader>
+        <CardContent>
 
         {inventory.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 mb-4">
               No inventory items from this vendor yet.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="text-left px-4 py-3">Item Name</th>
                   <th className="text-left px-4 py-3">Quantity</th>
@@ -188,12 +191,12 @@ export function VendorDetail({
               <tbody className="divide-y divide-gray-200">
                 {inventory.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">{item.name}</td>
-                    <td className="px-4 py-3 text-gray-600">{item.quantity}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{item.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{item.quantity}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => onNavigateToInventory(String(item.id))}
-                        className="text-blue-600 hover:underline"
+                        className="text-[#06cdfe] hover:underline text-sm"
                       >
                         View
                       </button>
@@ -204,7 +207,8 @@ export function VendorDetail({
             </table>
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {showEditForm && (
         <VendorForm

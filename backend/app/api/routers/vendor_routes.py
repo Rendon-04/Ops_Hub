@@ -18,6 +18,7 @@ def create_vendor(
     current_user: User = Depends(get_current_user)
 ):
     vendor = Vendor(
+        workspace_id=current_user.workspace_id,
         user_id=current_user.id,
         name=payload.name,
         email=payload.email,
@@ -34,7 +35,7 @@ def list_vendors(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(Vendor).filter(Vendor.user_id == current_user.id).all()
+    return db.query(Vendor).filter(Vendor.workspace_id == current_user.workspace_id).all()
 
 
 @router.get("/{vendor_id}", response_model=VendorOut)
@@ -45,7 +46,7 @@ def get_vendor(
 ):
     vendor = (
         db.query(Vendor)
-        .filter(Vendor.id == vendor_id, Vendor.user_id == current_user.id)
+        .filter(Vendor.id == vendor_id, Vendor.workspace_id == current_user.workspace_id)
         .first()
     )
     if not vendor:
@@ -62,7 +63,7 @@ def update_vendor(
 ):
     vendor = (
         db.query(Vendor)
-        .filter(Vendor.id == vendor_id, Vendor.user_id == current_user.id)
+        .filter(Vendor.id == vendor_id, Vendor.workspace_id == current_user.workspace_id)
         .first()
     )
     if not vendor:
@@ -88,7 +89,7 @@ def delete_vendor(
 ):
     vendor = (
         db.query(Vendor)
-        .filter(Vendor.id == vendor_id, Vendor.user_id == current_user.id)
+        .filter(Vendor.id == vendor_id, Vendor.workspace_id == current_user.workspace_id)
         .first()
     )
     if not vendor:

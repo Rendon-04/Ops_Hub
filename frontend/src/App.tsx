@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { api, setAuthToken } from "./api/client";
 import { getToken, saveToken, clearToken } from "./auth/token";
 import { Login } from './components/Login';
-import { Register } from './components/Register';
 import { Dashboard } from './components/Dashboard';
 import { VendorsList } from './components/VendorsList';
 import { VendorDetail } from './components/VendorDetail';
@@ -12,13 +11,13 @@ import { TasksList } from './components/TasksList';
 import { TaskDetail } from './components/TaskDetail';
 import { IncidentReports } from './components/IncidentReports';
 import { IncidentDetail } from './components/IncidentDetail';
+import { Documents } from './components/Documents';
 import { AppShell } from './components/AppShell';
 import { Toaster } from "sonner";
 
 
 type Route = 
   | { page: 'login' }
-  | { page: 'register' }
   | { page: 'dashboard' }
   | { page: 'vendors' }
   | { page: 'vendor-detail'; id: string }
@@ -27,52 +26,52 @@ type Route =
   | { page: 'tasks' }
   | { page: 'task-detail'; id: string }
   | { page: 'incidents' }
-  | { page: 'incident-detail'; id: string };
+  | { page: 'incident-detail'; id: string }
+  | { page: 'documents' };
 
 export default function App() {
   const [route, setRoute] = useState<Route>({ page: 'login' });
-  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; name?: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string>('');
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      setAuthToken(token);
-      setAccessToken(token);
-      // minimal "user" state for UI
-      setUser({ email: "user" });
-      setRoute({ page: "dashboard" });
-    }
-    setLoading(false);
+    const init = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const tokenFromUrl = params.get("token");
+      const token = tokenFromUrl || getToken();
+
+      if (tokenFromUrl) {
+        saveToken(tokenFromUrl);
+        setAuthToken(tokenFromUrl);
+        window.history.replaceState({}, "", "/");
+      }
+
+      if (token) {
+        setAuthToken(token);
+        setAccessToken(token);
+        try {
+          const res = await api.get("/auth/me");
+          setUser({ email: res.data.email, name: res.data.name });
+          setRoute({ page: "dashboard" });
+        } catch (err) {
+          clearToken();
+          setAuthToken(null);
+          setUser(null);
+          setAccessToken("");
+          setRoute({ page: "login" });
+        }
+      }
+      setLoading(false);
+    };
+
+    init();
   }, []);
 
-  const handleLogin = async (email: string, password: string) => {
-    try {
-      const res = await api.post("/auth/login", { email, password });
-      const token = res.data.access_token;
-  
-      saveToken(token);
-      setAuthToken(token);
-  
-      setAccessToken(token);
-      setUser({ email });
-      setRoute({ page: "dashboard" });
-    } catch (err: any) {
-      throw new Error(err?.response?.data?.detail || "Failed to login");
-    }
+  const handleGoogleLogin = () => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+    window.location.href = `${baseUrl}/auth/google/login`;
   };
-  
-
-  const handleRegister = async (_name: string, email: string, password: string) => {
-    try {
-      await api.post("/auth/signup", { email, password });
-      await handleLogin(email, password);
-    } catch (err: any) {
-      throw new Error(err?.response?.data?.detail || "Failed to register");
-    }
-  };
-  
 
   const handleLogout = async () => {
     clearToken();
@@ -95,17 +94,7 @@ export default function App() {
     return (
       <>
         <Toaster position="top-right" />
-        {route.page === 'login' ? (
-          <Login
-            onLogin={handleLogin}
-            onNavigateToRegister={() => setRoute({ page: 'register' })}
-          />
-        ) : (
-          <Register
-            onRegister={handleRegister}
-            onNavigateToLogin={() => setRoute({ page: 'login' })}
-          />
-        )}
+        <Login onGoogleLogin={handleGoogleLogin} />
       </>
     );
   }
@@ -114,7 +103,7 @@ export default function App() {
     <>
       <Toaster position="top-right" />
       <AppShell
-        userName={user.email}
+        userName={user.name || user.email}
         onLogout={handleLogout}
         currentPage={route.page}
         onNavigate={(page) => setRoute({ page: page as any })}
@@ -182,6 +171,9 @@ export default function App() {
             incidentId={route.id}
             onNavigateBack={() => setRoute({ page: 'incidents' })}
           />
+        )}
+        {route.page === 'documents' && user && (
+          <Documents userEmail={user.email} />
         )}
       </AppShell>
     </>

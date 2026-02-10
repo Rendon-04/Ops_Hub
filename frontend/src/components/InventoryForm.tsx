@@ -104,18 +104,18 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label htmlFor="name" className="block mb-2">
-              Item Name <span className="text-red-500">*</span>
+              Item Name <span className="text-[#e90786]">*</span>
             </label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                errors.name ? "border-[#e90786]" : "border-gray-300"
               }`}
             />
-            {errors.name && <p className="text-red-500 mt-1">{errors.name}</p>}
+            {errors.name && <p className="text-[#e90786] mt-1">{errors.name}</p>}
           </div>
 
           <div>
@@ -127,7 +127,7 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
               placeholder="Coffee, snacks, cleaning supplies"
             />
           </div>
@@ -140,7 +140,7 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
               id="vendor"
               value={vendorId}
               onChange={(e) => setVendorId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
             >
               <option value="">Select a vendor (optional)</option>
               {vendors.map((vendor) => (
@@ -153,7 +153,7 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
 
           <div>
             <label htmlFor="quantity" className="block mb-2">
-              Quantity Needed <span className="text-red-500">*</span>
+              Quantity Needed <span className="text-[#e90786]">*</span>
             </label>
             <input
               id="quantity"
@@ -161,16 +161,16 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
               min="0"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.quantity ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                errors.quantity ? "border-[#e90786]" : "border-gray-300"
               }`}
             />
-            {errors.quantity && <p className="text-red-500 mt-1">{errors.quantity}</p>}
+            {errors.quantity && <p className="text-[#e90786] mt-1">{errors.quantity}</p>}
           </div>
 
           <div>
             <label htmlFor="reorderThreshold" className="block mb-2">
-              Reorder Threshold <span className="text-red-500">*</span>
+              Reorder Threshold <span className="text-[#e90786]">*</span>
             </label>
             <input
               id="reorderThreshold"
@@ -178,12 +178,12 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
               min="0"
               value={reorderThreshold}
               onChange={(e) => setReorderThreshold(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.reorder_threshold ? "border-red-500" : "border-gray-300"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                errors.reorder_threshold ? "border-[#e90786]" : "border-gray-300"
               }`}
             />
             {errors.reorder_threshold && (
-              <p className="text-red-500 mt-1">{errors.reorder_threshold}</p>
+              <p className="text-[#e90786] mt-1">{errors.reorder_threshold}</p>
             )}
           </div>
 
@@ -196,7 +196,7 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
               type="url"
               value={reorderUrl}
               onChange={(e) => setReorderUrl(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
               placeholder="https://vendor.example.com/reorder"
             />
           </div>
@@ -210,7 +210,7 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
               placeholder="Optional notes"
             />
           </div>
@@ -219,7 +219,7 @@ export function InventoryForm({ item, vendors, onSave, onCancel }: InventoryForm
             <button
               type="submit"
               disabled={isSaving}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+              className="flex-1 bg-[#e90786] text-white py-2 px-4 rounded-lg hover:bg-[#d10677] disabled:opacity-60"
             >
               {isSaving ? "Saving..." : "Save"}
             </button>

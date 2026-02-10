@@ -70,6 +70,7 @@ def create_incident(
     validate_follow_up(payload.follow_up_needed, payload.follow_up_owner, payload.follow_up_due_date)
 
     incident = Incident(
+        workspace_id=current_user.workspace_id,
         title=payload.title,
         incident_type=payload.incident_type,
         occurred_at=payload.occurred_at,
@@ -103,7 +104,7 @@ def list_incidents(
 ):
     validate_incident_payload(incident_type, severity, status_value)
 
-    query = db.query(Incident).filter(Incident.reported_by_user_id == current_user.id)
+    query = db.query(Incident).filter(Incident.workspace_id == current_user.workspace_id)
 
     if incident_type:
         query = query.filter(Incident.incident_type == incident_type)
@@ -129,7 +130,7 @@ def get_incident(
 ):
     incident = db.query(Incident).filter(
         Incident.id == incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:
@@ -147,7 +148,7 @@ def update_incident(
 ):
     incident = db.query(Incident).filter(
         Incident.id == incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:
@@ -208,7 +209,7 @@ def delete_incident(
 ):
     incident = db.query(Incident).filter(
         Incident.id == incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:
@@ -228,7 +229,7 @@ def upload_attachment(
 ):
     incident = db.query(Incident).filter(
         Incident.id == incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:
@@ -260,6 +261,7 @@ def upload_attachment(
 
     attachment = IncidentAttachment(
         incident_id=incident_id,
+        workspace_id=current_user.workspace_id,
         file_name=safe_name,
         mime_type=file.content_type or "application/octet-stream",
         file_size=size,
@@ -284,14 +286,15 @@ def list_attachments(
 ):
     incident = db.query(Incident).filter(
         Incident.id == incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
 
     attachments = db.query(IncidentAttachment).filter(
-        IncidentAttachment.incident_id == incident_id
+        IncidentAttachment.incident_id == incident_id,
+        IncidentAttachment.workspace_id == current_user.workspace_id
     ).order_by(IncidentAttachment.created_at.desc()).all()
 
     for attachment in attachments:
@@ -308,7 +311,8 @@ def view_attachment(
     current_user: User = Depends(get_current_user),
 ):
     attachment = db.query(IncidentAttachment).filter(
-        IncidentAttachment.id == attachment_id
+        IncidentAttachment.id == attachment_id,
+        IncidentAttachment.workspace_id == current_user.workspace_id
     ).first()
 
     if not attachment:
@@ -316,7 +320,7 @@ def view_attachment(
 
     incident = db.query(Incident).filter(
         Incident.id == attachment.incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:
@@ -342,7 +346,8 @@ def download_attachment(
     current_user: User = Depends(get_current_user),
 ):
     attachment = db.query(IncidentAttachment).filter(
-        IncidentAttachment.id == attachment_id
+        IncidentAttachment.id == attachment_id,
+        IncidentAttachment.workspace_id == current_user.workspace_id
     ).first()
 
     if not attachment:
@@ -350,7 +355,7 @@ def download_attachment(
 
     incident = db.query(Incident).filter(
         Incident.id == attachment.incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:
@@ -376,7 +381,8 @@ def delete_attachment(
     current_user: User = Depends(get_current_user),
 ):
     attachment = db.query(IncidentAttachment).filter(
-        IncidentAttachment.id == attachment_id
+        IncidentAttachment.id == attachment_id,
+        IncidentAttachment.workspace_id == current_user.workspace_id
     ).first()
 
     if not attachment:
@@ -384,7 +390,7 @@ def delete_attachment(
 
     incident = db.query(Incident).filter(
         Incident.id == attachment.incident_id,
-        Incident.reported_by_user_id == current_user.id
+        Incident.workspace_id == current_user.workspace_id
     ).first()
 
     if not incident:

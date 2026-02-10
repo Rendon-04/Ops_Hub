@@ -14,7 +14,7 @@ export function ConfirmModal({ title, message, onConfirm, onCancel }: ConfirmMod
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-red-100 text-red-600 rounded-lg">
+            <div className="p-2 bg-[#e90786]/10 text-[#e90786] rounded-lg">
               <AlertTriangle size={24} />
             </div>
             <h2>{title}</h2>
@@ -23,7 +23,7 @@ export function ConfirmModal({ title, message, onConfirm, onCancel }: ConfirmMod
           <div className="flex gap-3">
             <button
               onClick={onConfirm}
-              className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+              className="flex-1 bg-[#e90786] text-white py-2 px-4 rounded-lg hover:bg-[#d10677]"
             >
               Delete
             </button>

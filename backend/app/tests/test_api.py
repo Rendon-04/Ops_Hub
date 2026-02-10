@@ -1,5 +1,6 @@
 import pytest
 from datetime import date, timedelta
+from urllib.parse import urlparse, parse_qs
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -7,9 +8,13 @@ from app.main import app
 from app.db.base import Base
 from app.db.session import get_db
 from app.models.user import User  
+from app.models.workspace import Workspace
 from app.models.vendor import Vendor  
 from app.models.inventory_item import InventoryItem  
 from app.models.maintenance_task import MaintenanceTask  
+from app.models.shift_note import ShiftNote
+from app.models.document import Document
+from app.api.routers.document_routes import STORAGE_DIR
 
 
 # -----------------------------
@@ -56,56 +61,112 @@ def client(db_session):
 # -----------------------------
 # Helpers
 # -----------------------------
-def signup(client: TestClient, email: str, password: str):
-    return client.post("/auth/signup", json={"email": email, "password": password})
-
-
-def login_get_token(client: TestClient, email: str, password: str) -> str:
-    res = client.post("/auth/login", json={"email": email, "password": password})
-    assert res.status_code == 200, res.text
-    data = res.json()
-    assert "access_token" in data
-    return data["access_token"]
-
-
 def auth_headers(token: str):
     return {"Authorization": f"Bearer {token}"}
+
+
+def mock_google_login(monkeypatch, email: str, sub: str = "sub-1", name: str = "Test User", verified: bool = True, hd: str = "neon.work"):
+    from app.auth import google as google_auth
+
+    def fake_exchange_code(_code: str):
+        return {"id_token": "fake-id-token"}
+
+    def fake_verify(_id_token: str):
+        return {
+            "email": email,
+            "email_verified": verified,
+            "sub": sub,
+            "name": name,
+            "hd": hd,
+        }
+
+    monkeypatch.setattr(google_auth, "exchange_code_for_tokens", fake_exchange_code)
+    monkeypatch.setattr(google_auth, "verify_google_id_token", fake_verify)
+
+
+def google_login(client: TestClient, monkeypatch, email: str, sub: str = "sub-1"):
+    mock_google_login(monkeypatch, email=email, sub=sub)
+    res = client.get("/auth/google/callback?code=fake", follow_redirects=False)
+    assert res.status_code in (302, 307), res.text
+    location = res.headers.get("location", "")
+    token = parse_qs(urlparse(location).query).get("token", [""])[0]
+    assert token
+    return token
 
 
 # -----------------------------
 # Tests
 # -----------------------------
-def test_auth_signup_and_login(client: TestClient):
-    r = signup(client, "a@test.com", "password123")
-    assert r.status_code == 200, r.text
-
-    token = login_get_token(client, "a@test.com", "password123")
-    assert isinstance(token, str)
-    assert len(token) > 20
+def test_google_login_rejects_non_domain(client: TestClient, monkeypatch):
+    mock_google_login(monkeypatch, email="user@example.com")
+    r = client.get("/auth/google/callback?code=fake", follow_redirects=False)
+    assert r.status_code == 403
 
 
-def test_vendor_crud_and_ownership(client: TestClient):
-    # user A
-    signup(client, "a@test.com", "password123")
-    token_a = login_get_token(client, "a@test.com", "password123")
+def test_google_login_creates_workspace_and_user(client: TestClient, db_session, monkeypatch):
+    token = google_login(client, monkeypatch, "user@neon.work", sub="sub-abc")
+    assert token
+
+    user = db_session.query(User).filter(User.email == "user@neon.work").first()
+    assert user is not None
+    assert user.workspace_id is not None
+    workspace = db_session.query(Workspace).filter(Workspace.id == user.workspace_id).first()
+    assert workspace is not None
+    assert workspace.name == "Neon Spaces"
+
+
+def test_workspace_scoping_isolated(client: TestClient, db_session, monkeypatch):
+    token_a = google_login(client, monkeypatch, "alpha@neon.work", sub="sub-a")
+    headers_a = auth_headers(token_a)
+
+    r = client.post("/vendors/", json={"name": "Vendor A"}, headers=headers_a)
+    assert r.status_code == 200
+
+    workspace_b = Workspace(name="Other Workspace")
+    db_session.add(workspace_b)
+    db_session.commit()
+    db_session.refresh(workspace_b)
+
+    user_b = User(
+        email="bravo@neon.work",
+        workspace_id=workspace_b.id,
+        role="member",
+    )
+    db_session.add(user_b)
+    db_session.commit()
+    db_session.refresh(user_b)
+
+    from app.auth.security import create_access_token
+
+    token_b = create_access_token({"user_id": user_b.id})
+    headers_b = auth_headers(token_b)
+
+    r = client.get("/vendors/", headers=headers_b)
+    assert r.status_code == 200
+    assert r.json() == []
+
+
+def test_vendor_crud_and_ownership(client: TestClient, monkeypatch):
+    token_a = google_login(client, monkeypatch, "a@neon.work", sub="sub-a")
+    headers_a = auth_headers(token_a)
 
     # create vendor
     r = client.post(
         "/vendors/",
         json={"name": "Vendor A", "email": "va@test.com", "phone": "111"},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200, r.text
     vendor_a = r.json()
     vendor_id = vendor_a["id"]
 
     # list vendors (should contain 1)
-    r = client.get("/vendors/", headers=auth_headers(token_a))
+    r = client.get("/vendors/", headers=headers_a)
     assert r.status_code == 200
     assert len(r.json()) == 1
 
     # get vendor
-    r = client.get(f"/vendors/{vendor_id}", headers=auth_headers(token_a))
+    r = client.get(f"/vendors/{vendor_id}", headers=headers_a)
     assert r.status_code == 200
     assert r.json()["name"] == "Vendor A"
 
@@ -113,34 +174,32 @@ def test_vendor_crud_and_ownership(client: TestClient):
     r = client.put(
         f"/vendors/{vendor_id}",
         json={"phone": "222"},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     assert r.json()["phone"] == "222"
 
-    # user B should NOT see A's vendor
-    signup(client, "b@test.com", "password123")
-    token_b = login_get_token(client, "b@test.com", "password123")
+    token_b = google_login(client, monkeypatch, "b@neon.work", sub="sub-b")
+    headers_b = auth_headers(token_b)
 
-    r = client.get(f"/vendors/{vendor_id}", headers=auth_headers(token_b))
-    assert r.status_code == 404 
+    r = client.get(f"/vendors/{vendor_id}", headers=headers_b)
+    assert r.status_code == 200
 
-    # delete vendor as A
-    r = client.delete(f"/vendors/{vendor_id}", headers=auth_headers(token_a))
+    # delete vendor as B (shared workspace)
+    r = client.delete(f"/vendors/{vendor_id}", headers=headers_b)
     assert r.status_code == 200
     assert r.json()["message"].lower().startswith("vendor")
 
 
-def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
-    # user A setup
-    signup(client, "a@test.com", "password123")
-    token_a = login_get_token(client, "a@test.com", "password123")
+def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient, monkeypatch):
+    token_a = google_login(client, monkeypatch, "a@neon.work", sub="sub-a")
+    headers_a = auth_headers(token_a)
 
     # create vendor A
     r = client.post(
         "/vendors/",
         json={"name": "Vendor A"},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     vendor_a_id = r.json()["id"]
@@ -157,7 +216,7 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
             "notes": "Restock monthly",
             "vendor_id": vendor_a_id,
         },
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200, r.text
     item = r.json()
@@ -170,12 +229,12 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
     assert item["vendor_id"] == vendor_a_id
 
     # list inventory
-    r = client.get("/inventory/", headers=auth_headers(token_a))
+    r = client.get("/inventory/", headers=headers_a)
     assert r.status_code == 200
     assert len(r.json()) == 1
 
     # get item
-    r = client.get(f"/inventory/{item_id}", headers=auth_headers(token_a))
+    r = client.get(f"/inventory/{item_id}", headers=headers_a)
     assert r.status_code == 200
     assert r.json()["name"] == "Printer Paper"
 
@@ -183,14 +242,14 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
     r = client.put(
         f"/inventory/{item_id}",
         json={"quantity": 20},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     assert r.json()["is_low_stock"] is False
     assert r.json()["status"] == "In Stock"
 
     # low-stock endpoint should now be empty
-    r = client.get("/inventory/low-stock", headers=auth_headers(token_a))
+    r = client.get("/inventory/low-stock", headers=headers_a)
     assert r.status_code == 200
     assert r.json() == []
 
@@ -198,12 +257,12 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
     r = client.post(
         "/inventory/",
         json={"name": "Gloves", "quantity": 1, "reorder_threshold": 5},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     assert r.json()["status"] == "Low"
 
-    r = client.get("/inventory/low-stock", headers=auth_headers(token_a))
+    r = client.get("/inventory/low-stock", headers=headers_a)
     assert r.status_code == 200
     assert len(r.json()) == 1
     assert r.json()[0]["name"] == "Gloves"
@@ -212,47 +271,44 @@ def test_inventory_crud_low_stock_and_vendor_validation(client: TestClient):
     r = client.post(
         "/inventory/",
         json={"name": "Coffee Pods", "quantity": 0, "reorder_threshold": 10},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     assert r.json()["status"] == "Out"
 
-    # ownership check: user B cannot see A's item
-    signup(client, "b@test.com", "password123")
-    token_b = login_get_token(client, "b@test.com", "password123")
+    # shared workspace: user B can see items
+    token_b = google_login(client, monkeypatch, "b@neon.work", sub="sub-b")
+    headers_b = auth_headers(token_b)
 
-    r = client.get(f"/inventory/{item_id}", headers=auth_headers(token_b))
-    assert r.status_code == 404
+    r = client.get(f"/inventory/{item_id}", headers=headers_b)
+    assert r.status_code == 200
 
-    # vendor assignment validation check:
     r = client.post(
         "/inventory/",
-        json={"name": "Bad Item", "quantity": 1, "reorder_threshold": 1, "vendor_id": vendor_a_id},
-        headers=auth_headers(token_b),
+        json={"name": "Extra Item", "quantity": 1, "reorder_threshold": 1, "vendor_id": vendor_a_id},
+        headers=headers_b,
     )
-    assert r.status_code == 400
-    assert "vendor_id" in r.json()["detail"]
+    assert r.status_code == 200
 
     # weekly inventory check
-    r = client.post(f"/inventory/{item_id}/check", headers=auth_headers(token_a))
+    r = client.post(f"/inventory/{item_id}/check", headers=headers_a)
     assert r.status_code == 200
     assert r.json()["last_checked_at"] is not None
 
-    r = client.post("/inventory/check", headers=auth_headers(token_a))
+    r = client.post("/inventory/check", headers=headers_a)
     assert r.status_code == 200
     assert r.json()["checked_count"] >= 1
 
 
-def test_maintenance_crud_upcoming_and_ownership(client: TestClient):
-    # user A setup
-    signup(client, "a@test.com", "password123")
-    token_a = login_get_token(client, "a@test.com", "password123")
+def test_maintenance_crud_upcoming_and_ownership(client: TestClient, monkeypatch):
+    token_a = google_login(client, monkeypatch, "a@neon.work", sub="sub-a")
+    headers_a = auth_headers(token_a)
 
     # create inventory item A
     r = client.post(
         "/inventory/",
         json={"name": "HVAC Filter", "quantity": 2, "reorder_threshold": 2},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     item_a_id = r.json()["id"]
@@ -269,7 +325,7 @@ def test_maintenance_crud_upcoming_and_ownership(client: TestClient):
             "notes": "Urgent",
             "status": "OPEN",
         },
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200, r.text
     task = r.json()
@@ -287,11 +343,11 @@ def test_maintenance_crud_upcoming_and_ownership(client: TestClient):
             "due_date": str(due_30),
             "status": "IN_PROGRESS",
         },
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
 
-    r = client.get("/maintenance/upcoming?days=7", headers=auth_headers(token_a))
+    r = client.get("/maintenance/upcoming?days=7", headers=headers_a)
     assert r.status_code == 200, r.text
     upcoming = r.json()
     assert len(upcoming) == 1
@@ -301,32 +357,29 @@ def test_maintenance_crud_upcoming_and_ownership(client: TestClient):
     r = client.put(
         f"/maintenance/{task_id}",
         json={"status": "CLOSED"},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     assert r.json()["status"] == "CLOSED"
 
-    r = client.get("/maintenance/upcoming?days=7", headers=auth_headers(token_a))
+    r = client.get("/maintenance/upcoming?days=7", headers=headers_a)
     assert r.status_code == 200
     assert r.json() == []
 
-    signup(client, "b@test.com", "password123")
-    token_b = login_get_token(client, "b@test.com", "password123")
-
+    token_b = google_login(client, monkeypatch, "b@neon.work", sub="sub-b")
     r = client.delete(f"/maintenance/{task_id}", headers=auth_headers(token_b))
-    assert r.status_code == 404
+    assert r.status_code == 200
 
 
-def test_dashboard_summary_counts(client: TestClient):
-    # user A setup
-    signup(client, "a@test.com", "password123")
-    token_a = login_get_token(client, "a@test.com", "password123")
+def test_dashboard_summary_counts(client: TestClient, monkeypatch):
+    token_a = google_login(client, monkeypatch, "a@neon.work", sub="sub-a")
+    headers_a = auth_headers(token_a)
 
     # create 2 inventory items (1 low-stock)
     r = client.post(
         "/inventory/",
         json={"name": "Item 1", "quantity": 1, "reorder_threshold": 5},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
     item1_id = r.json()["id"]
@@ -334,7 +387,7 @@ def test_dashboard_summary_counts(client: TestClient):
     r = client.post(
         "/inventory/",
         json={"name": "Item 2", "quantity": 10, "reorder_threshold": 2},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
 
@@ -343,12 +396,12 @@ def test_dashboard_summary_counts(client: TestClient):
     r = client.post(
         "/maintenance/",
         json={"inventory_item_id": item1_id, "title": "Check Item 1", "due_date": str(due), "status": "OPEN"},
-        headers=auth_headers(token_a),
+        headers=headers_a,
     )
     assert r.status_code == 200
 
     # summary endpoint
-    r = client.get("/dashboard/summary", headers=auth_headers(token_a))
+    r = client.get("/dashboard/summary", headers=headers_a)
     assert r.status_code == 200, r.text
     data = r.json()
 
@@ -356,12 +409,109 @@ def test_dashboard_summary_counts(client: TestClient):
     assert data["low_stock_count"] == 1
     assert data["open_tasks_count"] == 1
 
-    signup(client, "b@test.com", "password123")
-    token_b = login_get_token(client, "b@test.com", "password123")
-
+    token_b = google_login(client, monkeypatch, "b@neon.work", sub="sub-b")
     r = client.get("/dashboard/summary", headers=auth_headers(token_b))
     assert r.status_code == 200
     data_b = r.json()
-    assert data_b["total_items"] == 0
-    assert data_b["low_stock_count"] == 0
-    assert data_b["open_tasks_count"] == 0
+    assert data_b["total_items"] == 2
+    assert data_b["low_stock_count"] == 1
+    assert data_b["open_tasks_count"] == 1
+
+
+def test_shift_notes_upsert_and_validation(client: TestClient, monkeypatch):
+    token_a = google_login(client, monkeypatch, "a@neon.work", sub="sub-a")
+
+    today = date.today().isoformat()
+
+    r = client.put(
+        "/api/shift-notes",
+        json={"note_date": today, "shift_type": "opening", "content": "Morning check complete"},
+        headers=auth_headers(token_a),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["opening"]["content"] == "Morning check complete"
+
+    r = client.put(
+        "/api/shift-notes",
+        json={"note_date": today, "shift_type": "opening", "content": "Updated opening note"},
+        headers=auth_headers(token_a),
+    )
+    assert r.status_code == 200
+    assert r.json()["opening"]["content"] == "Updated opening note"
+
+    r = client.put(
+        "/api/shift-notes",
+        json={"note_date": today, "shift_type": "midday", "content": "Bad type"},
+        headers=auth_headers(token_a),
+    )
+    assert r.status_code == 400
+
+    r = client.put(
+        "/api/shift-notes",
+        json={"note_date": today, "shift_type": "closing", "content": "   "},
+        headers=auth_headers(token_a),
+    )
+    assert r.status_code == 400
+
+
+def test_documents_admin_upload_and_delete(client: TestClient, db_session, monkeypatch):
+    admin_token = google_login(client, monkeypatch, "admin@neon.work", sub="sub-admin")
+    user_token = google_login(client, monkeypatch, "user@neon.work", sub="sub-user")
+
+    file_payload = {
+        "file": ("opening.pdf", b"test content", "application/pdf"),
+    }
+    data_payload = {
+        "title": "Opening Procedures",
+        "category": "opening",
+        "description": "Store opening checklist",
+        "is_pinned": "true",
+    }
+
+    r = client.post(
+        "/api/documents",
+        data=data_payload,
+        files=file_payload,
+        headers=auth_headers(user_token),
+    )
+    assert r.status_code == 403
+
+    r = client.post(
+        "/api/documents",
+        data=data_payload,
+        files=file_payload,
+        headers=auth_headers(admin_token),
+    )
+    assert r.status_code == 200, r.text
+    doc_id = r.json()["id"]
+
+    doc = db_session.query(Document).filter(Document.id == doc_id).first()
+    assert doc is not None
+    file_path = STORAGE_DIR / doc.stored_filename
+    assert file_path.exists()
+
+    r = client.put(
+        f"/api/documents/{doc_id}",
+        json={"title": "Updated title"},
+        headers=auth_headers(user_token),
+    )
+    assert r.status_code == 403
+
+    r = client.delete(
+        f"/api/documents/{doc_id}",
+        headers=auth_headers(user_token),
+    )
+    assert r.status_code == 403
+
+    r = client.delete(
+        f"/api/documents/{doc_id}",
+        headers=auth_headers(admin_token),
+    )
+    assert r.status_code == 200
+    assert not file_path.exists()
+
+
+def test_documents_download_missing(client: TestClient, monkeypatch):
+    admin_token = google_login(client, monkeypatch, "admin@neon.work", sub="sub-admin")
+    r = client.get("/api/documents/9999/download", headers=auth_headers(admin_token))
+    assert r.status_code == 404

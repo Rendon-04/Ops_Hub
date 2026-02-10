@@ -32,7 +32,7 @@ def create_task(
     if payload.inventory_item_id is not None:
         item = db.query(InventoryItem).filter(
             InventoryItem.id == payload.inventory_item_id,
-            InventoryItem.user_id == current_user.id
+            InventoryItem.workspace_id == current_user.workspace_id
         ).first()
 
         if not item:
@@ -41,7 +41,7 @@ def create_task(
     if payload.vendor_id is not None:
         vendor = db.query(Vendor).filter(
             Vendor.id == payload.vendor_id,
-            Vendor.user_id == current_user.id
+            Vendor.workspace_id == current_user.workspace_id
         ).first()
 
         if not vendor:
@@ -60,6 +60,7 @@ def create_task(
             task_type = "OTHER"
 
     task = MaintenanceTask(
+        workspace_id=current_user.workspace_id,
         user_id=current_user.id,
         inventory_item_id=payload.inventory_item_id,
         vendor_id=payload.vendor_id,
@@ -84,7 +85,7 @@ def list_tasks(
     current_user: User = Depends(get_current_user)
 ):
     return db.query(MaintenanceTask).filter(
-        MaintenanceTask.user_id == current_user.id
+        MaintenanceTask.workspace_id == current_user.workspace_id
     ).all()
 
 @router.get("/upcoming", response_model=List[MaintenanceOut])
@@ -102,7 +103,7 @@ def upcoming_tasks(
 
     tasks = (
         db.query(MaintenanceTask)
-        .filter(MaintenanceTask.user_id == current_user.id)
+        .filter(MaintenanceTask.workspace_id == current_user.workspace_id)
         .filter(MaintenanceTask.status.in_(["OPEN", "IN_PROGRESS", "BLOCKED"]))
         .filter(MaintenanceTask.due_date != None)  
         .filter(MaintenanceTask.due_date >= start_date)
@@ -121,7 +122,7 @@ def get_task(
 ):
     task = db.query(MaintenanceTask).filter(
         MaintenanceTask.id == task_id,
-        MaintenanceTask.user_id == current_user.id
+        MaintenanceTask.workspace_id == current_user.workspace_id
     ).first()
 
     if not task:
@@ -138,7 +139,7 @@ def update_task(
 ):
     task = db.query(MaintenanceTask).filter(
         MaintenanceTask.id == task_id,
-        MaintenanceTask.user_id == current_user.id
+        MaintenanceTask.workspace_id == current_user.workspace_id
     ).first()
 
     if not task:
@@ -151,7 +152,7 @@ def update_task(
     if payload.inventory_item_id is not None:
         item = db.query(InventoryItem).filter(
             InventoryItem.id == payload.inventory_item_id,
-            InventoryItem.user_id == current_user.id
+            InventoryItem.workspace_id == current_user.workspace_id
         ).first()
         if not item:
             raise HTTPException(status_code=400, detail="Invalid inventory_item_id")
@@ -159,7 +160,7 @@ def update_task(
     if payload.vendor_id is not None:
         vendor = db.query(Vendor).filter(
             Vendor.id == payload.vendor_id,
-            Vendor.user_id == current_user.id
+            Vendor.workspace_id == current_user.workspace_id
         ).first()
         if not vendor:
             raise HTTPException(status_code=400, detail="Invalid vendor_id")
@@ -195,7 +196,7 @@ def delete_task(
 ):
     task = db.query(MaintenanceTask).filter(
         MaintenanceTask.id == task_id,
-        MaintenanceTask.user_id == current_user.id
+        MaintenanceTask.workspace_id == current_user.workspace_id
     ).first()
 
     if not task:

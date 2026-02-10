@@ -18,7 +18,7 @@ def validate_vendor_id(db: Session, vendor_id: Optional[int], current_user: User
 
     vendor = db.query(Vendor).filter(
         Vendor.id == vendor_id,
-        Vendor.user_id == current_user.id
+        Vendor.workspace_id == current_user.workspace_id
     ).first()
 
     if not vendor:
@@ -63,6 +63,7 @@ def create_item(
     vendor_id = validate_vendor_id(db, payload.vendor_id, current_user)
 
     item = InventoryItem(
+        workspace_id=current_user.workspace_id,
         user_id=current_user.id,
         vendor_id=vendor_id,
         name=payload.name,
@@ -86,7 +87,7 @@ def list_items(
     current_user: User = Depends(get_current_user)
 ):
     items = db.query(InventoryItem).filter(
-        InventoryItem.user_id == current_user.id
+        InventoryItem.workspace_id == current_user.workspace_id
     ).all()
 
     return [to_inventory_out(i) for i in items]
@@ -98,7 +99,7 @@ def list_low_stock_items(
 ):
     items = (
         db.query(InventoryItem)
-        .filter(InventoryItem.user_id == current_user.id)
+        .filter(InventoryItem.workspace_id == current_user.workspace_id)
         .filter(InventoryItem.quantity <= InventoryItem.reorder_threshold)
         .all()
     )
@@ -114,7 +115,7 @@ def get_item(
 ):
     item = db.query(InventoryItem).filter(
         InventoryItem.id == item_id,
-        InventoryItem.user_id == current_user.id
+        InventoryItem.workspace_id == current_user.workspace_id
     ).first()
 
     if not item:
@@ -132,7 +133,7 @@ def update_item(
 ):
     item = db.query(InventoryItem).filter(
         InventoryItem.id == item_id,
-        InventoryItem.user_id == current_user.id
+        InventoryItem.workspace_id == current_user.workspace_id
     ).first()
 
     if not item:
@@ -174,7 +175,7 @@ def delete_item(
 ):
     item = db.query(InventoryItem).filter(
         InventoryItem.id == item_id,
-        InventoryItem.user_id == current_user.id
+        InventoryItem.workspace_id == current_user.workspace_id
     ).first()
 
     if not item:
@@ -194,7 +195,7 @@ def check_item(
 ):
     item = db.query(InventoryItem).filter(
         InventoryItem.id == item_id,
-        InventoryItem.user_id == current_user.id
+        InventoryItem.workspace_id == current_user.workspace_id
     ).first()
 
     if not item:
@@ -214,7 +215,7 @@ def check_inventory(
 ):
     checked_at = datetime.utcnow()
     items = db.query(InventoryItem).filter(
-        InventoryItem.user_id == current_user.id
+        InventoryItem.workspace_id == current_user.workspace_id
     ).all()
 
     for item in items:
@@ -223,5 +224,4 @@ def check_inventory(
     db.commit()
 
     return {"checked_count": len(items), "checked_at": checked_at.isoformat()}
-
 

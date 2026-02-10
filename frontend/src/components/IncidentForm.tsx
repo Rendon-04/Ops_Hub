@@ -119,7 +119,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   placeholder="Short incident title"
                 />
-                {errors.title && <p className="text-red-500 mt-1">{errors.title}</p>}
+                {errors.title && <p className="text-[#e90786] mt-1">{errors.title}</p>}
               </div>
               <div>
                 <label className="block mb-2">Incident Type *</label>
@@ -134,7 +134,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
                     </option>
                   ))}
                 </select>
-                {errors.incident_type && <p className="text-red-500 mt-1">{errors.incident_type}</p>}
+                {errors.incident_type && <p className="text-[#e90786] mt-1">{errors.incident_type}</p>}
               </div>
               <div>
                 <label className="block mb-2">Date & Time *</label>
@@ -144,7 +144,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
                   onChange={(e) => setOccurredAt(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
-                {errors.occurred_at && <p className="text-red-500 mt-1">{errors.occurred_at}</p>}
+                {errors.occurred_at && <p className="text-[#e90786] mt-1">{errors.occurred_at}</p>}
               </div>
             </div>
           </div>
@@ -158,7 +158,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
               placeholder="Describe what happened"
             />
-            {errors.description && <p className="text-red-500 mt-1">{errors.description}</p>}
+            {errors.description && <p className="text-[#e90786] mt-1">{errors.description}</p>}
           </div>
 
           <div>
@@ -176,7 +176,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
                 </label>
               ))}
             </div>
-            {errors.severity && <p className="text-red-500 mt-1">{errors.severity}</p>}
+            {errors.severity && <p className="text-[#e90786] mt-1">{errors.severity}</p>}
           </div>
 
           <div>
@@ -188,7 +188,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
               placeholder="What was done"
             />
-            {errors.action_taken && <p className="text-red-500 mt-1">{errors.action_taken}</p>}
+            {errors.action_taken && <p className="text-[#e90786] mt-1">{errors.action_taken}</p>}
           </div>
 
           <div>
@@ -212,7 +212,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
                     onChange={(e) => setFollowUpOwner(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   />
-                  {errors.follow_up_owner && <p className="text-red-500 mt-1">{errors.follow_up_owner}</p>}
+                  {errors.follow_up_owner && <p className="text-[#e90786] mt-1">{errors.follow_up_owner}</p>}
                 </div>
                 <div>
                   <label className="block mb-2">Follow-up Due Date *</label>
@@ -222,7 +222,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
                     onChange={(e) => setFollowUpDueDate(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   />
-                  {errors.follow_up_due_date && <p className="text-red-500 mt-1">{errors.follow_up_due_date}</p>}
+                  {errors.follow_up_due_date && <p className="text-[#e90786] mt-1">{errors.follow_up_due_date}</p>}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block mb-2">Follow-up Notes</label>
@@ -269,7 +269,7 @@ export function IncidentForm({ initial, onSave, onCancel }: IncidentFormProps) {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+              className="flex-1 bg-[#e90786] text-white py-2 px-4 rounded-lg hover:bg-[#d10677] disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save Incident"}
             </button>

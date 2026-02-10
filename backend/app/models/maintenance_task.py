@@ -7,6 +7,7 @@ class MaintenanceTask(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
     inventory_item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=True, index=True)

@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type { Task } from "../types/task.ts";
 import type { Vendor } from "../types/vendor";
 import type { InventoryItem } from "../types/inventory";
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 
 
@@ -145,7 +146,7 @@ export function InventoryDetail({
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 mb-4">Inventory item not found</p>
-        <button onClick={onNavigateBack} className="text-blue-600 hover:underline">
+        <button onClick={onNavigateBack} className="text-[#06cdfe] hover:underline">
           Go back
         </button>
       </div>
@@ -156,97 +157,98 @@ export function InventoryDetail({
   const statusColor = getStatusColor(status);
 
   return (
-    <div>
+    <div className="space-y-6">
       <button
         onClick={onNavigateBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
       >
         <ArrowLeft size={20} />
         Back to Inventory
       </button>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-start justify-between mb-6">
+      <Card>
+        <CardHeader className="flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="mb-2">{item.name}</h1>
-            <div className="flex items-center gap-4">
+            <CardTitle className="text-2xl">{item.name}</CardTitle>
+            <div className="mt-2 flex items-center gap-4">
               <span
-                className={`px-3 py-1 rounded-full inline-block ${
+                className={`px-3 py-1 rounded-full inline-block text-xs font-medium ${
                   statusColor === 'green'
-                    ? 'bg-green-100 text-green-800'
+                    ? 'bg-[#06cdfe]/15 text-[#06cdfe]'
                     : statusColor === 'orange'
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-red-100 text-red-800'
+                    ? 'bg-[#dfff35]/70 text-black'
+                    : 'bg-[#e90786]/10 text-[#e90786]'
                 }`}
               >
                 {status}
               </span>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleCheck}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Mark Checked
             </button>
             <button
               onClick={() => setShowEditForm(true)}
-              className="flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
+              className="flex items-center gap-2 px-4 py-2 text-[#06cdfe] border border-[#06cdfe] rounded-lg hover:bg-[#06cdfe]/10 transition-colors"
             >
               <Edit2 size={18} />
               Edit
             </button>
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+              className="flex items-center gap-2 px-4 py-2 text-[#e90786] border border-[#e90786] rounded-lg hover:bg-[#e90786]/10 transition-colors"
             >
               <Trash2 size={18} />
               Delete
             </button>
           </div>
-        </div>
+        </CardHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="mb-2">Vendor</h3>
-            <p className="text-gray-600">{vendor?.name || 'Not assigned'}</p>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Vendor</h3>
+            <p className="text-sm text-gray-600">{vendor?.name || 'Not assigned'}</p>
           </div>
 
           <div>
-            <h3 className="mb-2">Quantity</h3>
-            <p className="text-gray-600">{String(item.quantity ?? 0)}</p>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Quantity</h3>
+            <p className="text-sm text-gray-600">{String(item.quantity ?? 0)}</p>
           </div>
 
           <div>
-            <h3 className="mb-2">Category</h3>
-            <p className="text-gray-600">{item.category || '—'}</p>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Category</h3>
+            <p className="text-sm text-gray-600">{item.category || '—'}</p>
           </div>
 
           <div>
-            <h3 className="mb-2">Minimum Threshold</h3>
-            <p className="text-gray-600">{String(item.reorder_threshold ?? 0)}</p>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Minimum Threshold</h3>
+            <p className="text-sm text-gray-600">{String(item.reorder_threshold ?? 0)}</p>
           </div>
 
           <div>
-            <h3 className="mb-2">Reorder Link</h3>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Reorder Link</h3>
             {item.reorder_url ? (
               <a
                 href={item.reorder_url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-blue-600 hover:underline break-all"
+                className="text-sm text-[#06cdfe] hover:underline break-all"
               >
                 {item.reorder_url}
               </a>
             ) : (
-              <p className="text-gray-600">—</p>
+              <p className="text-sm text-gray-600">—</p>
             )}
           </div>
 
           <div>
-            <h3 className="mb-2">Last Checked</h3>
-            <p className="text-gray-600">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Last Checked</h3>
+            <p className="text-sm text-gray-600">
               {item.last_checked_at
                 ? new Date(item.last_checked_at).toLocaleString()
                 : 'Not checked yet'}
@@ -255,23 +257,27 @@ export function InventoryDetail({
         </div>
         {item.notes && (
           <div className="mt-6">
-            <h3 className="mb-2">Notes</h3>
-            <p className="text-gray-600 whitespace-pre-line">{item.notes}</p>
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Notes</h3>
+            <p className="text-sm text-gray-600 whitespace-pre-line">{item.notes}</p>
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="mb-4">Related Maintenance Tasks</h2>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Related Maintenance Tasks</CardTitle>
+        </CardHeader>
+        <CardContent>
 
         {tasks.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-600">No related tasks yet.</p>
+            <p className="text-sm text-gray-600">No related tasks yet.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-gray-200">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="text-left px-4 py-3">Title</th>
                   <th className="text-left px-4 py-3">Status</th>
@@ -282,17 +288,17 @@ export function InventoryDetail({
               <tbody className="divide-y divide-gray-200">
                 {tasks.map((task) => (
                   <tr key={task.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">{task.title}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{task.title}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`px-3 py-1 rounded-full inline-block ${
+                        className={`px-3 py-1 rounded-full inline-block text-xs font-medium ${
                           task.status === 'OPEN'
-                            ? 'bg-blue-100 text-blue-800'
-                            : task.status === 'IN_PROGRESS'
-                            ? 'bg-orange-100 text-orange-800'
-                            : task.status === 'BLOCKED'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-green-100 text-green-800'
+                            ? 'bg-[#e90786]/10 text-[#e90786]'
+                          : task.status === 'IN_PROGRESS'
+                            ? 'bg-[#06cdfe]/15 text-[#06cdfe]'
+                          : task.status === 'BLOCKED'
+                            ? 'bg-[#dfff35]/70 text-black'
+                          : 'bg-gray-100 text-gray-700'
                         }`}
                       >
                         {task.status === 'IN_PROGRESS'
@@ -304,13 +310,13 @@ export function InventoryDetail({
                           : 'Open'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-sm text-gray-600">
                       {task.due_date ? new Date(task.due_date).toLocaleDateString() : '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => onNavigateToTask(String(task.id))}
-                        className="text-blue-600 hover:underline"
+                        className="text-[#06cdfe] hover:underline text-sm"
                       >
                         View
                       </button>
@@ -321,7 +327,8 @@ export function InventoryDetail({
             </table>
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {showEditForm && (
         <InventoryForm

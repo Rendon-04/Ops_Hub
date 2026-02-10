@@ -7,6 +7,7 @@ class InventoryItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     vendor_id = Column(Integer, ForeignKey("vendors.id"), nullable=True, index=True)
     name = Column(String, nullable=False)

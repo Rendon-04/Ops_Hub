@@ -16,16 +16,16 @@ def get_dashboard_summary(
     current_user: User = Depends(get_current_user)
 ):
     total_items = db.query(InventoryItem).filter(
-        InventoryItem.user_id == current_user.id
+        InventoryItem.workspace_id == current_user.workspace_id
     ).count()
 
     low_stock_count = db.query(InventoryItem).filter(
-        InventoryItem.user_id == current_user.id,
+        InventoryItem.workspace_id == current_user.workspace_id,
         InventoryItem.quantity <= InventoryItem.reorder_threshold
     ).count()
 
     open_tasks_count = db.query(MaintenanceTask).filter(
-        MaintenanceTask.user_id == current_user.id,
+        MaintenanceTask.workspace_id == current_user.workspace_id,
         MaintenanceTask.status.in_(["OPEN", "IN_PROGRESS", "BLOCKED"])
     ).count()
 

@@ -7,6 +7,7 @@ class Incident(Base):
     __tablename__ = "incidents"
 
     id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
     title = Column(String, nullable=False)
     incident_type = Column(String, nullable=False)
     occurred_at = Column(DateTime(timezone=True), nullable=False)

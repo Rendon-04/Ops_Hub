@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+import os
 from app.db.base import Base
 from app.db.session import engine
 
@@ -16,6 +17,8 @@ from app.api.routers import (
     maintenance_routes,
     dashboard_routes,
     incident_routes,
+    shift_notes_routes,
+    document_routes,
 )
 
 app = FastAPI()
@@ -41,9 +44,13 @@ app.include_router(dashboard_routes.router)
 app.include_router(incident_routes.incidents_router)
 app.include_router(incident_routes.incident_attachments_router)
 app.include_router(incident_routes.attachments_router)
+app.include_router(shift_notes_routes.router)
+app.include_router(document_routes.router)
 
 @app.on_event("startup")
 def on_startup():
+    if os.getenv("SKIP_DB_INIT", "").lower() == "true":
+        return
     Base.metadata.create_all(bind=engine)
 
 @app.get("/")

@@ -115,18 +115,18 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label htmlFor="title" className="block mb-2">
-              Title <span className="text-red-500">*</span>
+              Title <span className="text-[#e90786]">*</span>
             </label>
             <input
               id="title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.title ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                errors.title ? 'border-[#e90786]' : 'border-gray-300'
               }`}
             />
-            {errors.title && <p className="text-red-500 mt-1">{errors.title}</p>}
+            {errors.title && <p className="text-[#e90786] mt-1">{errors.title}</p>}
           </div>
 
           <div>
@@ -137,7 +137,7 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
               id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as Task["status"])}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
             >
               <option value="OPEN">Open</option>
               <option value="IN_PROGRESS">In Progress</option>
@@ -167,7 +167,7 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
               id="taskType"
               value={taskType}
               onChange={(e) => setTaskType(e.target.value as TaskType)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
             >
               <option value="EVENT">Event</option>
               <option value="INVENTORY">Inventory</option>
@@ -186,12 +186,12 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
                 type="text"
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.event ? "border-red-500" : "border-gray-300"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                  errors.event ? "border-[#e90786]" : "border-gray-300"
                 }`}
                 placeholder="Event name"
               />
-              {errors.event && <p className="text-red-500 mt-1">{errors.event}</p>}
+              {errors.event && <p className="text-[#e90786] mt-1">{errors.event}</p>}
             </div>
           )}
 
@@ -204,8 +204,8 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
                 id="inventory"
                 value={inventoryId}
                 onChange={(e) => setInventoryId(e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.inventory ? "border-red-500" : "border-gray-300"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                  errors.inventory ? "border-[#e90786]" : "border-gray-300"
                 }`}
               >
                 <option value="">Select a Category</option>
@@ -215,7 +215,7 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
                   </option>
                 ))}
               </select>
-              {errors.inventory && <p className="text-red-500 mt-1">{errors.inventory}</p>}
+              {errors.inventory && <p className="text-[#e90786] mt-1">{errors.inventory}</p>}
             </div>
           )}
 
@@ -228,8 +228,8 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
                 id="vendor"
                 value={vendorId}
                 onChange={(e) => setVendorId(e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.vendor ? "border-red-500" : "border-gray-300"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                  errors.vendor ? "border-[#e90786]" : "border-gray-300"
                 }`}
               >
                 <option value="">Select a vendor</option>
@@ -239,7 +239,7 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
                   </option>
                 ))}
               </select>
-              {errors.vendor && <p className="text-red-500 mt-1">{errors.vendor}</p>}
+              {errors.vendor && <p className="text-[#e90786] mt-1">{errors.vendor}</p>}
             </div>
           )}
 
@@ -253,12 +253,12 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
                 type="text"
                 value={otherText}
                 onChange={(e) => setOtherText(e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.event ? "border-red-500" : "border-gray-300"
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                  errors.event ? "border-[#e90786]" : "border-gray-300"
                 }`}
                 placeholder="Describe what this task is linked to"
               />
-              {errors.event && <p className="text-red-500 mt-1">{errors.event}</p>}
+              {errors.event && <p className="text-[#e90786] mt-1">{errors.event}</p>}
             </div>
           )}
 
@@ -273,7 +273,7 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
             />
           </div>
 
@@ -286,7 +286,7 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
               placeholder="Optional notes"
             />
           </div>
@@ -294,7 +294,7 @@ export function TaskForm({ task, inventory, vendors, onSave, onCancel }: TaskFor
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+              className="flex-1 bg-[#e90786] text-white py-2 px-4 rounded-lg hover:bg-[#d10677]"
             >
               Save
             </button>

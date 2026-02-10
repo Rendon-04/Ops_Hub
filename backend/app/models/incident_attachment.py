@@ -8,6 +8,7 @@ class IncidentAttachment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=False, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
     file_name = Column(String, nullable=False)
     mime_type = Column(String, nullable=False)
     file_size = Column(Integer, nullable=True)

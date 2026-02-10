@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { toast } from "sonner";
 import type { Incident, IncidentAttachment, IncidentStatus } from "../types/incident";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 
 interface IncidentDetailProps {
@@ -88,7 +89,7 @@ export function IncidentDetail({ incidentId, onNavigateBack }: IncidentDetailPro
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 mb-4">Incident not found</p>
-        <button onClick={onNavigateBack} className="text-blue-600 hover:underline">
+        <button onClick={onNavigateBack} className="text-[#06cdfe] hover:underline">
           Go back
         </button>
       </div>
@@ -96,26 +97,26 @@ export function IncidentDetail({ incidentId, onNavigateBack }: IncidentDetailPro
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <button
         onClick={onNavigateBack}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
       >
         Back to Incidents
       </button>
 
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-start justify-between mb-6">
+      <Card>
+        <CardHeader className="flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="mb-2">{incident.title}</h1>
-            <p className="text-gray-600">
+            <CardTitle className="text-2xl">{incident.title}</CardTitle>
+            <p className="text-sm text-gray-600 mt-1">
               Occurred: {new Date(incident.occurred_at).toLocaleString()}
             </p>
-            <p className="text-gray-600 capitalize">
+            <p className="text-sm text-gray-500 capitalize">
               {incident.incident_type.replace(/_/g, " ")}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as IncidentStatus)}
@@ -127,51 +128,53 @@ export function IncidentDetail({ incidentId, onNavigateBack }: IncidentDetailPro
             </select>
             <button
               onClick={handleStatusUpdate}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="bg-[#e90786] text-white px-4 py-2 rounded-lg hover:bg-[#d10677] transition-colors"
             >
               Update Status
             </button>
           </div>
-        </div>
+        </CardHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="mb-2">Severity</h3>
-            <p className="text-gray-600 capitalize">{incident.severity}</p>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Severity</h3>
+              <p className="text-sm text-gray-600 capitalize">{incident.severity}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-slate-800 mb-2">Reported By</h3>
+              <p className="text-sm text-gray-600">{incident.reported_by_user_id}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="mb-2">Reported By</h3>
-            <p className="text-gray-600">{incident.reported_by_user_id}</p>
+
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Description</h3>
+            <p className="text-sm text-gray-600 whitespace-pre-line">{incident.description}</p>
           </div>
-        </div>
 
-        <div className="mt-6">
-          <h3 className="mb-2">Description</h3>
-          <p className="text-gray-600 whitespace-pre-line">{incident.description}</p>
-        </div>
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Action Taken</h3>
+            <p className="text-sm text-gray-600 whitespace-pre-line">{incident.action_taken}</p>
+          </div>
 
-        <div className="mt-6">
-          <h3 className="mb-2">Action Taken</h3>
-          <p className="text-gray-600 whitespace-pre-line">{incident.action_taken}</p>
-        </div>
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-slate-800 mb-2">Follow-up</h3>
+            <p className="text-sm text-gray-600">
+              {incident.follow_up_needed
+                ? `Yes • ${incident.follow_up_owner || "Unassigned"} • ${incident.follow_up_due_date || "No due date"}`
+                : "No"}
+            </p>
+            {incident.follow_up_notes && (
+              <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">{incident.follow_up_notes}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="mt-6">
-          <h3 className="mb-2">Follow-up</h3>
-          <p className="text-gray-600">
-            {incident.follow_up_needed
-              ? `Yes • ${incident.follow_up_owner || "Unassigned"} • ${incident.follow_up_due_date || "No due date"}`
-              : "No"}
-          </p>
-          {incident.follow_up_notes && (
-            <p className="text-gray-600 mt-2 whitespace-pre-line">{incident.follow_up_notes}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2>Attachments</h2>
-          <label className="text-blue-600 cursor-pointer">
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-lg">Attachments</CardTitle>
+          <label className="text-[#06cdfe] cursor-pointer text-sm">
             {uploading ? "Uploading..." : "Upload Files"}
             <input
               type="file"
@@ -182,10 +185,11 @@ export function IncidentDetail({ incidentId, onNavigateBack }: IncidentDetailPro
               disabled={uploading}
             />
           </label>
-        </div>
+        </CardHeader>
+        <CardContent>
 
         {attachments.length === 0 ? (
-          <p className="text-gray-600">No attachments yet.</p>
+          <p className="text-sm text-gray-600">No attachments yet.</p>
         ) : (
           <ul className="space-y-2">
             {attachments.map((attachment) => {
@@ -210,14 +214,14 @@ export function IncidentDetail({ incidentId, onNavigateBack }: IncidentDetailPro
                     <div className="flex items-center gap-3">
                       {canPreview && (
                         <button
-                          className="text-blue-600 hover:underline"
+                          className="text-[#06cdfe] hover:underline text-sm"
                           onClick={() => togglePreview(attachment.id)}
                         >
                           {isOpen ? "Hide Preview" : "Preview"}
                         </button>
                       )}
                       <a
-                        className="text-blue-600 hover:underline"
+                        className="text-[#06cdfe] hover:underline text-sm"
                         href={downloadUrl}
                         target="_blank"
                         rel="noreferrer"
@@ -252,7 +256,8 @@ export function IncidentDetail({ incidentId, onNavigateBack }: IncidentDetailPro
             })}
           </ul>
         )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

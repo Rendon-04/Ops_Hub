@@ -67,19 +67,19 @@ export function VendorForm({ vendor, onSave, onCancel }: VendorFormProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label htmlFor="name" className="block mb-2">
-              Name <span className="text-red-500">*</span>
+              Name <span className="text-[#e90786]">*</span>
             </label>
             <input
               id="name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe] ${
+                errors.name ? 'border-[#e90786]' : 'border-gray-300'
               }`}
             />
             {errors.name && (
-              <p className="text-red-500 mt-1">{errors.name}</p>
+              <p className="text-[#e90786] mt-1">{errors.name}</p>
             )}
           </div>
 
@@ -92,7 +92,7 @@ export function VendorForm({ vendor, onSave, onCancel }: VendorFormProps) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
               placeholder="vendor@example.com"
             />
           </div>
@@ -106,7 +106,7 @@ export function VendorForm({ vendor, onSave, onCancel }: VendorFormProps) {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#06cdfe]"
               placeholder="555-555-5555"
             />
           </div>
@@ -114,7 +114,7 @@ export function VendorForm({ vendor, onSave, onCancel }: VendorFormProps) {
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+              className="flex-1 bg-[#e90786] text-white py-2 px-4 rounded-lg hover:bg-[#d10677]"
             >
               Save
             </button>

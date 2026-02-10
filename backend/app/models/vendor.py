@@ -7,12 +7,12 @@ class Vendor(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=True)
     phone = Column(String, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
 
 
