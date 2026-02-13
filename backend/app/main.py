@@ -1,10 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-load_dotenv()
+
+# load_dotenv()
 
 
 import os
+
+if os.getenv("ENV", "local") == "local":
+    from dotenv import load_dotenv
+    load_dotenv()
+    
 from app.db.base import Base
 from app.db.session import engine
 
@@ -22,6 +27,8 @@ from app.api.routers import (
 )
 
 app = FastAPI()
+
+
 
 origins = [
     "http://localhost:5173",
